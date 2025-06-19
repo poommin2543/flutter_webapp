@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_markdown/flutter_markdown.dart';
-
+import 'chapter5.dart';
 // คลาสสำหรับเก็บข้อมูลข้อความแชท
 class ChatMessage {
   final String text;
@@ -12,22 +12,22 @@ class ChatMessage {
 }
 
 // วิดเจ็ตหลักสำหรับ Chapter 3
-class Chapter3Page extends StatefulWidget {
+class Chapter4Page extends StatefulWidget {
   final int chapter;
   final String username;
   final VoidCallback onFinished; // Callback เมื่อจบ Chapter
 
-  Chapter3Page({
+  Chapter4Page({
     required this.chapter,
     required this.username,
     required this.onFinished,
   });
 
   @override
-  _Chapter3PageState createState() => _Chapter3PageState();
+  _Chapter4PageState createState() => _Chapter4PageState();
 }
 
-class _Chapter3PageState extends State<Chapter3Page> {
+class _Chapter4PageState extends State<Chapter4Page> {
   // ข้อมูลแบบทดสอบ (Quiz) ที่กำหนดไว้ล่วงหน้า
   // ในแอปพลิเคชันจริง อาจจะดึงมาจาก API หรือกำหนดค่าในที่อื่น
   List<String> questions = ["What is the capital of France?"];
@@ -113,8 +113,8 @@ class _Chapter3PageState extends State<Chapter3Page> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => Chapter3Page( // กลับมาที่ Chapter3Page ตามคำขอ
-                      chapter: 3, // กำหนดหมายเลขบทที่ต้องการ
+                    builder: (context) => Chapter5Page( // กลับมาที่ Chapter3Page ตามคำขอ
+                      chapter: 5, // กำหนดหมายเลขบทที่ต้องการ
                       username: widget.username,
                       onFinished: () {
                         // ตัวอย่างเมื่อเสร็จสิ้นการทำ Chapter3 แล้ว
