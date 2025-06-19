@@ -5,24 +5,24 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 //import 'chapter4.dart';
 import 'dart:html' as html;
-import 'gate_result_page2.dart'; // นำเข้า GateResultPage ที่ถูกต้อง
+import 'gate_result_page3.dart'; // นำเข้า GateResultPage ที่ถูกต้อง
 
-class Chapter2Page extends StatefulWidget {
+class Chapter3Page extends StatefulWidget {
   final int chapter;
   final String username;
   final VoidCallback onFinished;
 
-  Chapter2Page({
+  Chapter3Page({
     required this.chapter,
     required this.username,
     required this.onFinished,
   });
 
   @override
-  _Chapter2PageState createState() => _Chapter2PageState();
+  _Chapter3PageState createState() => _Chapter3PageState();
 }
 
-class _Chapter2PageState extends State<Chapter2Page> {
+class _Chapter3PageState extends State<Chapter3Page> {
   late YoutubePlayerController _controller;
   final html.AudioElement correctAudio = html.AudioElement(
     //'assets/sounds/correct.mp3',
@@ -34,37 +34,42 @@ class _Chapter2PageState extends State<Chapter2Page> {
   )..preload = 'auto';
 
   final List<String> videoIds = [
-    '_8XW_BgiD_Q',
-    'dfofaZaJ3Rc',
-    'gCahggGt7ao',
+    'AvcAVT_XQA0',
+    'OBnA5HF6kvk',
+    '3xzXJboz1E0',
     'WwSfLUtrx_Y',
     'WwSfLUtrx_Y',
   ];
   final List<String> questions = [
-    'บุหรี่ไฟฟ้ามีสิ่งใดที่สามารถชักจูงให้เยาวชนสนใจ?',
-    'สาเหตุที่เยาวชนเริ่มสูบบุหรี่ไฟฟ้าได้แก่อะไร?',
-    'อันตรายจากสารพิษในบุหรี่ไฟฟ้าส่งผลกระทบต่อส่วนใดของร่างกาย?',
-    'บุหรี่ไฟฟ้าผิดกฏหมายในประเทศไทยหรือไม่?',
-    'ข้อใดคือความเข้าใจผิดเกี่ยวกับบุหรี่ไฟฟ้า?',
+    'พฤติกรรมของเยาวชนที่หันเข้าหาบุหรี่ไฟฟ้าคืออะไร?',
+    'สิ่งที่น่ากังวลในวัยเด็กและเยาวชนจากการสูบบุหรี่ไฟฟ้าคืออะไร?',
+    'ข้อเท็จจริงที่ว่าบุหรี่ไฟฟ้าเลิกสูบง่ายกว่าบุหรี่มวนจริงหรือไม่?',
+    'กลิ่นหอมจากบุหรี่ไฟฟ้าไม่ส่งผลอันตรายต่อร่างกาย?',
+    'โรคที่มักเกิดจากบุหรี่ไฟฟ้าได้แก่?',
   ];
   final List<List<String>> options = [
-    ['กลิ่นหอม รูปลักษณ์', 'มีสารเสพติด', 'ปลอดภัยกว่าบุหรี่มวน', 'มีความเทห์'],
-    ['มีความอันตรายน้อย', 'สื่อชักชวน', 'ควันมือสอง', 'เพื่อนชักชวน'],
-    ['ไต', 'อวัยวะทุกส่วนในร่างกาย', 'หัวใจ', 'ข้อกระดูก'],
+    ['อยากรู้ อยากลอง', 'ไม่สนใจคำเตือน', 'ขาดความรู้', 'ถูกทุกข้อ'],
     [
-      'ถูกกฏหมาย',
-      'ผิดกฏหมายเฉพาะผู้นำเข้า',
-      'ผิดกฏหมายเฉพาะผู้ขาย',
-      'ผิดกฏหมายทั้งหมดไม่ว่ากรณีใดก็ตาม',
+      'สมองสูญเสียการพัฒนา',
+      'ช่วยให้หายใจโล่ง',
+      'ลดความเครียดได้',
+      'ใช้แล้วรู้สึกว่าเท่และเป็นที่ยอมรับ',
     ],
-    ['ขาดความตระหนัก', 'ความเชื่อที่ผิด', 'ไม่มีสารนิโคติน', 'ถูกทุกข้อ'],
+    ['ไม่จริง ', 'จริง', 'อาจจะใช่', 'ไม่มีข้อมูลที่ชัดเจน'],
+    [
+      'จริงทั้งหมด',
+      'จริง ขึ้นอยู่กับกลิ่นและรสชาติ',
+      'ไม่จริง ขึ้นอยู่กับกลิ่นและรสชาติ',
+      'ไม่จริงทั้งหมด',
+    ],
+    ['POV', 'CANCER', 'EVALI', 'COVID'],
   ];
   final List<String> answers = [
-    'กลิ่นหอม รูปลักษณ์',
-    'เพื่อนชักชวน',
-    'อวัยวะทุกส่วนในร่างกาย',
-    'ผิดกฏหมายทั้งหมดไม่ว่ากรณีใดก็ตาม',
     'ถูกทุกข้อ',
+    'สมองสูญเสียการพัฒนา',
+    'จริง',
+    'ไม่จริงทั้งหมด',
+    'EVALI',
   ];
 
   int currentIndex = 0;
@@ -164,7 +169,7 @@ class _Chapter2PageState extends State<Chapter2Page> {
                   context,
                   MaterialPageRoute(
                     builder: (_) =>
-                        GateResultPage(chapter: 3, username: widget.username),
+                        GateResultPage(chapter: 4, username: widget.username),
                   ),
                 );
               },
@@ -200,8 +205,10 @@ class _Chapter2PageState extends State<Chapter2Page> {
             SizedBox(
               width: MediaQuery.of(context).size.width * 0.9,
               height: 400,
-              child: currentIndex == 4
-                  ? Image.asset('assets/images/Q5.jpg', fit: BoxFit.contain)
+              child: currentIndex == 3
+                  ? Image.asset('assets/images/Q34.jpg', fit: BoxFit.contain)
+                  : currentIndex == 4
+                  ? Image.asset('assets/images/Q35.jpg', fit: BoxFit.contain)
                   : YoutubePlayer(controller: _controller),
             ),
             SizedBox(height: 20),

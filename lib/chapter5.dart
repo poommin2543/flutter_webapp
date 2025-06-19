@@ -7,7 +7,7 @@ class Chapter5Page extends StatefulWidget {
   final int chapter;
   final String username;
   final VoidCallback onFinished;
-  
+
   Chapter5Page({
     required this.chapter,
     required this.username,
@@ -25,17 +25,14 @@ class _Chapter5PageState extends State<Chapter5Page> {
 
   // ข้อมูลสำหรับคำถาม (ยังคงอยู่เพื่อใช้ใน AlertDialog)
   final List<String> questions = [
-    "จากข้อมูลในภาพ ข้อใด 'ไม่ถูกต้อง' เกี่ยวกับบุหรี่ไฟฟ้า?",
+    "การแนะนำเพื่อนที่ดีด้วยใจของเราเอง เป็นสิ่งที่มีคุณค่า?",
   ];
 
   final List<List<String>> options = [
-    ["บุหรี่ไฟฟ้าช่วยให้เลิกสูบบุหรี่ธรรมดาได้แน่นอน", 
-    "บุหรี่ไฟฟ้ามีสารที่เป็นอันตรายต่อร่างกาย", 
-    "บุหรี่ไฟฟ้าเป็นสิ่งผิดกฎหมาย", 
-    "บุหรี่ไฟฟ้ามีผลเสียต่อหัวใจและหลอดเลือด"],
+    ["ใช่ ทุกประการ", "ใช่ บางประการ", "ไม่ใช่ บางประการ", "ไม่ใช่ทุกประการ"],
   ];
 
-  final List<String> answers = ["บุหรี่ไฟฟ้าช่วยให้เลิกสูบบุหรี่ธรรมดาได้แน่นอน"];
+  final List<String> answers = ["ใช่ ทุกประการ"];
   List<String> userAnswers = []; // Initialized in initState
   int score = 0;
 
@@ -61,7 +58,9 @@ class _Chapter5PageState extends State<Chapter5Page> {
     try {
       final response = await http.post(
         // ใช้ URL ของ Go backend ที่รันอยู่
-        Uri.parse('https://apiwebmoss.roverautonomous.com/add_comment'), // <-- อัปเดต URL นี้
+        Uri.parse(
+          'https://apiwebmoss.roverautonomous.com/add_comment',
+        ), // <-- อัปเดต URL นี้
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'username': widget.username,
@@ -127,7 +126,7 @@ class _Chapter5PageState extends State<Chapter5Page> {
     }
 
     // ปิด AlertDialog ของแบบทดสอบก่อนแสดง AlertDialog คะแนน
-    Navigator.pop(dialogContext); 
+    Navigator.pop(dialogContext);
 
     showDialog(
       context: context,
@@ -167,7 +166,8 @@ class _Chapter5PageState extends State<Chapter5Page> {
               content: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min, // จำกัดขนาด Column ให้พอดีกับเนื้อหา
+                  mainAxisSize:
+                      MainAxisSize.min, // จำกัดขนาด Column ให้พอดีกับเนื้อหา
                   children: [
                     // ลบ Image.asset ออกไป
                     SizedBox(height: 20),
@@ -175,14 +175,21 @@ class _Chapter5PageState extends State<Chapter5Page> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(questions[i], style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          Text(
+                            questions[i],
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           ...options[i].map((option) {
                             return RadioListTile<String>(
                               title: Text(option),
                               value: option,
                               groupValue: userAnswers[i],
                               onChanged: (value) {
-                                setDialogState(() { // ใช้ setDialogState เพื่ออัปเดต UI ภายใน dialog
+                                setDialogState(() {
+                                  // ใช้ setDialogState เพื่ออัปเดต UI ภายใน dialog
                                   userAnswers[i] = value!;
                                 });
                               },
@@ -197,7 +204,9 @@ class _Chapter5PageState extends State<Chapter5Page> {
               actions: [
                 TextButton(
                   onPressed: () {
-                    _calculateAndSubmitScore(dialogContext); // ส่ง dialogContext ไปด้วย
+                    _calculateAndSubmitScore(
+                      dialogContext,
+                    ); // ส่ง dialogContext ไปด้วย
                   },
                   child: const Text('ส่งคำตอบ'),
                 ),
@@ -222,11 +231,26 @@ class _Chapter5PageState extends State<Chapter5Page> {
               children: [
                 // ลบ Image.asset ออกไป
                 const SizedBox(height: 20),
+                // 🧍‍♂️ INSERT CHARACTER IMAGE HERE
+                Image.asset(
+                  'assets/images/buddy_8.png', // Replace with your actual path
+                  height: 300,
+                ),
+
+                const SizedBox(height: 20),
 
                 // ข้อความ "อะไรก็ได้"
                 const Text(
-                  "อะไรก็ได้",
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.indigo),
+                  "ฉันชื่อ ต้น เป็นนักเรียนมัธยมต้น อยู่ ม.2 ชอบเล่นกีฬา มีเพื่อนสนิทกลุ่มหนึ่งที่บางคนเริ่มสูบบุหรี่ไฟฟ้าเพราะดูเท่และกลิ่นหอม\n\n"
+                  "วันหนึ่งหลังเลิกเรียน ต้นนั่งอยู่ใต้ตึกกับกลุ่มเพื่อนสนิท 3–4 คน เพื่อนคนหนึ่งหยิบบุหรี่ไฟฟ้าขึ้นมาแล้วบอกว่า\n\n"
+                  "“ลองดูดิ กลิ่นมะม่วง หอมมาก ไม่อันตรายหรอก คนสูบกันเต็มเลย”\n\n"
+                  "ต้นลังเล... เขาไม่เคยลองมาก่อน แต่ก็ไม่อยากโดนเพื่อนมองว่า “เชย” หรือ “กลัว”\n\n"
+                  "เพื่อนยื่นบุหรี่ไฟฟ้ามาให้ต้น แล้วถามว่า: “จะลองไหม? ลองแค่ทีเดียวก็ได้”",
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.indigo,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 20),
@@ -236,7 +260,7 @@ class _Chapter5PageState extends State<Chapter5Page> {
                   controller: _commentController,
                   maxLines: 5,
                   decoration: InputDecoration(
-                    hintText: 'กรอกความคิดเห็นของคุณที่นี่...',
+                    hintText: 'คำแนะนำของคุณๆ คือ',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -252,7 +276,10 @@ class _Chapter5PageState extends State<Chapter5Page> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue, // สีพื้นหลัง
                     foregroundColor: Colors.white, // สีตัวอักษร
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 40,
+                      vertical: 15,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -269,7 +296,9 @@ class _Chapter5PageState extends State<Chapter5Page> {
                     ? Text(
                         _message,
                         style: TextStyle(
-                          color: _message.contains('ข้อผิดพลาด') ? Colors.red : Colors.green,
+                          color: _message.contains('ข้อผิดพลาด')
+                              ? Colors.red
+                              : Colors.green,
                           fontWeight: FontWeight.bold,
                         ),
                         textAlign: TextAlign.center,
