@@ -64,6 +64,8 @@ flutter:
   assets:
     - assets/images/
     - assets/images/buddies/
+    - assets/images/ 
+    # - assets/images/buddies/
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 

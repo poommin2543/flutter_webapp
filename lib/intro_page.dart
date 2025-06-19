@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 // import 'main.dart'; // สำหรับการกลับไปหน้า LoginPage
 import 'chapter1.dart'; // สำหรับการไปหน้า Chapter1
+import 'bonus_page.dart';
 
 class IntroPage extends StatelessWidget {
   final String username;
@@ -22,7 +23,7 @@ class IntroPage extends StatelessWidget {
             children: [
               Image.asset(
                 'assets/images/Introduction1.webp', // ใส่ภาพแนะนำเกม
-                height: 500,
+                height: 600,
               ),
               SizedBox(height: 20),
               Text(
@@ -43,18 +44,27 @@ class IntroPage extends StatelessWidget {
                 ),
                 onPressed: () {
                   Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => Chapter1Page(
-                      chapter: 1, // กำหนดหมายเลขบทที่ต้องการ (ในที่นี้คือ Chapter 1)
-                      username: username,
-                      onFinished: () {
-                        // ตัวอย่างเมื่อเสร็จสิ้นการทำ Chapter1 แล้ว
-                      },
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => BonusPage(username: username),
                     ),
-                  ),
-                );
+                  );
                 },
+                //onPressed: () {
+                //  Navigator.push(
+                //    context,
+                //    MaterialPageRoute(
+                //      builder: (context) => Chapter1Page(
+                //        chapter:
+                //            1, // กำหนดหมายเลขบทที่ต้องการ (ในที่นี้คือ Chapter 1)
+                //        username: username,
+                //        onFinished: () {
+                //          // ตัวอย่างเมื่อเสร็จสิ้นการทำ Chapter1 แล้ว
+                //        },
+                //      ),
+                //    ),
+                //  );
+                //},
                 child: Text('เริ่มบทที่ 1', style: TextStyle(fontSize: 18)),
               ),
               SizedBox(height: 20),
