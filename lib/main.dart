@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'register_page.dart'; // นำเข้าหน้า Register
 // import 'MainChapter.dart';
 import 'welcome_page.dart';
+
 void main() {
   runApp(MyApp());
 }
@@ -40,7 +41,9 @@ class _LoginPageState extends State<LoginPage> {
 
     final response = await http.post(
       // Uri.parse('http://127.0.0.1:8080/login'), // หรือ IP Address ของเครื่อง
-      Uri.parse('https://apiwebmoss.roverautonomous.com/login'), // หรือ IP Address ของเครื่อง
+      Uri.parse(
+        'https://apiwebmoss.roverautonomous.com/login',
+      ), // หรือ IP Address ของเครื่อง
       headers: <String, String>{'Content-Type': 'application/json'},
       body: jsonEncode(<String, String>{
         'username': usernameController.text,
@@ -82,11 +85,56 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Login')),
+      appBar: AppBar(
+        title: Text('Main'),
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(180.0),
+          child: Column(
+            children: [
+              Text(
+                'Welcome to Program',
+                style: TextStyle(
+                  color: const Color.fromARGB(255, 212, 39, 39),
+                  fontSize: 40,
+                ),
+              ),
+              Text(
+                'Vape No More',
+                style: TextStyle(
+                  color: const Color.fromARGB(255, 255, 0, 0),
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                'ฉลาดรู้เท่าทันบุหรี่ไฟฟ้า',
+                style: TextStyle(
+                  color: const Color.fromARGB(255, 177, 60, 60),
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 10),
+            ],
+          ),
+        ),
+      ),
+
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            SizedBox(height: 20), // เว้นช่อง
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset('assets/images/login1.png', height: 200),
+                SizedBox(width: 20),
+                //Image.asset('assets/images/login1.png', height: 100),
+                Image.asset('assets/images/login2.jpg', height: 200),
+              ],
+            ),
+            SizedBox(height: 20),
             TextField(
               controller: usernameController,
               decoration: InputDecoration(labelText: 'Username'),

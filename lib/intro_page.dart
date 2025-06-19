@@ -12,44 +12,60 @@ class IntroPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Introduction'),
+        automaticallyImplyLeading: false, // ❌ ซ่อนปุ่ม back
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Welcome to the Introduction!',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 20),
-            Text(
-              'Here you will get an overview of the chapters and topics.',
-              style: TextStyle(fontSize: 18),
-            ),
-            SizedBox(height: 40),
-            ElevatedButton(
-              onPressed: () {
-                // ไปที่หน้า Chapter1
-                // Navigator.push(
-                //   context,
-                //   MaterialPageRoute(builder: (context) => Chapter1Page(username: username)),
-                // );
-              },
-              child: Text('Start Chapter 1'),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                // กลับไปหน้า LoginPage
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => LoginPage()),
-                );
-              },
-              child: Text('Logout'),
-            ),
-          ],
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(
+                'assets/images/Introduction1.webp', // ใส่ภาพแนะนำเกม
+                height: 500,
+              ),
+              SizedBox(height: 20),
+              Text(
+                'ยินดีต้อนรับเข้าสู่เกม!',
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 10),
+              Text(
+                'คุณจะได้พบกับบทเรียนและสถานการณ์\nที่จะช่วยให้คุณเข้าใจผลของการสูบบุหรี่ไฟฟ้า',
+                style: TextStyle(fontSize: 18),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 40),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                ),
+                onPressed: () {
+                  //Navigator.push(
+                  //context,
+                  //MaterialPageRoute(
+                  //  builder: (context) => Chapter1Page(username: username),
+                  //),
+                  //);
+                },
+                child: Text('เริ่มบทที่ 1', style: TextStyle(fontSize: 18)),
+              ),
+              SizedBox(height: 20),
+              //ElevatedButton(
+              //  style: ElevatedButton.styleFrom(
+              //    backgroundColor: Colors.redAccent,
+              //  ),
+              //  onPressed: () {
+              //    Navigator.pushReplacement(
+              //      context,
+              //      MaterialPageRoute(builder: (context) => LoginPage()),
+              //    );
+              //  },
+              //  child: Text('ออกจากระบบ'),
+              //),
+            ],
+          ),
         ),
       ),
     );
