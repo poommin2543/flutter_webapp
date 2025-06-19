@@ -60,7 +60,7 @@ class _Chapter5PageState extends State<Chapter5Page> {
     try {
       final response = await http.post(
         // ใช้ URL ของ Go backend ที่รันอยู่
-        Uri.parse('http://localhost:8080/add_comment'), // <-- อัปเดต URL นี้
+        Uri.parse('https://apiwebmoss.roverautonomous.com/add_comment'), // <-- อัปเดต URL นี้
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'username': widget.username,
