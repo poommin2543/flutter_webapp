@@ -94,14 +94,14 @@ class _LoginPageState extends State<LoginPage> {
               Text(
                 'Welcome to Program',
                 style: TextStyle(
-                  color: const Color.fromARGB(255, 212, 39, 39),
+                  color: const Color.fromARGB(255, 17, 83, 3),
                   fontSize: 40,
                 ),
               ),
               Text(
                 'Vape No More',
                 style: TextStyle(
-                  color: const Color.fromARGB(255, 255, 0, 0),
+                  color: const Color.fromARGB(255, 2, 82, 13),
                   fontSize: 30,
                   fontWeight: FontWeight.bold,
                 ),
@@ -109,7 +109,7 @@ class _LoginPageState extends State<LoginPage> {
               Text(
                 'ฉลาดรู้เท่าทันบุหรี่ไฟฟ้า',
                 style: TextStyle(
-                  color: const Color.fromARGB(255, 177, 60, 60),
+                  color: const Color.fromARGB(255, 2, 82, 16),
                   fontSize: 30,
                   fontWeight: FontWeight.bold,
                 ),
@@ -131,7 +131,7 @@ class _LoginPageState extends State<LoginPage> {
                 Image.asset('assets/images/login1.png', height: 200),
                 SizedBox(width: 20),
                 //Image.asset('assets/images/login1.png', height: 100),
-                Image.asset('assets/images/login2.jpg', height: 200),
+                Image.asset('assets/images/login2.png', height: 200),
               ],
             ),
             SizedBox(height: 20),
