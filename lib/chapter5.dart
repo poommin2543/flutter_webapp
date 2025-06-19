@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'summary_page.dart'; // Import the new SummaryPage
 
 class Chapter5Page extends StatefulWidget {
   final int chapter;
@@ -137,7 +138,13 @@ class _Chapter5PageState extends State<Chapter5Page> {
           TextButton(
             onPressed: () {
               Navigator.pop(context); // ปิด dialog คะแนน
-              widget.onFinished(); // เรียก callback เพื่อแจ้งว่าเสร็จสิ้นบทนี้
+              // แทนที่ widget.onFinished() ด้วยการนำทางไปยัง SummaryPage
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SummaryPage(username: widget.username),
+                ),
+              );
             },
             child: const Text('ตกลง'),
           ),
