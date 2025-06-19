@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
-
+import 'chapter3.dart';
 class Chapter2Page extends StatefulWidget {
   final int chapter;
   final String username;
@@ -36,25 +36,25 @@ class _Chapter2PageState extends State<Chapter2Page> {
   @override
   void initState() {
     super.initState();
-    // _controller = YoutubePlayerController.fromVideoId(
-    //   videoId: 'g9Oty97D6vA',
-    //   params: YoutubePlayerParams(
-    //     showFullscreenButton: false,
-    //     showControls: false, // ซ่อนแถบควบคุม
-    //     mute: false, // เปิดเสียง
-
-    //   ),
-    // );
-    // เริ่มเล่นวิดีโอโดยการเรียก play() หลังจากสร้างตัวควบคุม
-    _controller = YoutubePlayerController(
+    _controller = YoutubePlayerController.fromVideoId(
+      videoId: 'AvcAVT_XQA0',
       params: YoutubePlayerParams(
-        mute: false,
-        showControls: false,
         showFullscreenButton: false,
+        showControls: false, // ซ่อนแถบควบคุม
+        mute: false, // เปิดเสียง
+
       ),
     );
+    // เริ่มเล่นวิดีโอโดยการเรียก play() หลังจากสร้างตัวควบคุม
+    // _controller = YoutubePlayerController(
+    //   params: YoutubePlayerParams(
+    //     mute: false,
+    //     showControls: false,
+    //     showFullscreenButton: false,
+    //   ),
+    // );
 
-    _controller.loadVideoById(videoId: 'AvcAVT_XQA0');
+    // _controller.loadVideoById(videoId: 'AvcAVT_XQA0');
   }
 
   @override
@@ -100,7 +100,19 @@ class _Chapter2PageState extends State<Chapter2Page> {
         TextButton(
           onPressed: () {
             Navigator.pop(context); // ปิด dialog
-            Navigator.pop(context); // กลับไปหน้าเลือก Chapter
+            // Navigator.pop(context); // กลับไปหน้าเลือก Chapter
+            Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => Chapter3Page(
+                      chapter: 3, // กำหนดหมายเลขบทที่ต้องการ (ในที่นี้คือ Chapter 1)
+                      username: widget.username,
+                      onFinished: () {
+                        // ตัวอย่างเมื่อเสร็จสิ้นการทำ Chapter3 แล้ว
+                      },
+                    ),
+                  ),
+                );
           },
           child: Text('OK'),
         ),
