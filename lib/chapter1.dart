@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'chapter2.dart';
 class Chapter1Page extends StatefulWidget {
   final int chapter;
   final String username;
@@ -50,7 +51,7 @@ class _Chapter1PageState extends State<Chapter1Page> {
 
   // ส่งคะแนนไป backend
     await http.post(
-      Uri.parse('http://127.0.0.1:8080/submit_score'),
+      Uri.parse('https://apiwebmoss.roverautonomous.com/submit_score'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'username': widget.username,
@@ -60,7 +61,7 @@ class _Chapter1PageState extends State<Chapter1Page> {
     );
     //update_progress
     await http.post(
-      Uri.parse('http://127.0.0.1:8080/update_progress'),
+      Uri.parse('https://apiwebmoss.roverautonomous.com/update_progress'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'username': widget.username,
@@ -77,7 +78,19 @@ class _Chapter1PageState extends State<Chapter1Page> {
         TextButton(
           onPressed: () {
             Navigator.pop(context); // ปิด dialog
-            Navigator.pop(context); // กลับไปหน้าเลือก Chapter
+            Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => Chapter2Page(
+                      chapter: 2, // กำหนดหมายเลขบทที่ต้องการ (ในที่นี้คือ Chapter 1)
+                      username: widget.username,
+                      onFinished: () {
+                        // ตัวอย่างเมื่อเสร็จสิ้นการทำ Chapter2 แล้ว
+                      },
+                    ),
+                  ),
+                );
+            // Navigator.pop(context); // กลับไปหน้าเลือก Chapter
           },
           child: Text('OK'),
         ),
