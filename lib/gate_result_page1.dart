@@ -20,7 +20,7 @@ class _GateResultPageState extends State<GateResultPage> {
         context,
         MaterialPageRoute(
           builder: (context) => Chapter2Page(
-            chapter: 1,
+            chapter: 2,
             username: widget.username, // ส่ง username ไปยัง Chapter1Page
             onFinished: () {},
           ),

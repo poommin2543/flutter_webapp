@@ -106,7 +106,7 @@ class _Chapter4PageState extends State<Chapter4Page> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // ปิด dialog แสดงผลคะแนน
+                // Navigator.pop(context); // ปิด dialog แสดงผลคะแนน
                 // นำทางไปยัง Chapter3Page ตามที่ผู้ใช้ระบุ
                 // โปรดทราบ: หากต้องการไป Chapter ถัดไป ควรเปลี่ยนเป็น ChapterNPage()
                 // หรือกลับไปหน้าเลือก Chapter
@@ -122,6 +122,7 @@ class _Chapter4PageState extends State<Chapter4Page> {
                     ),
                   ),
                 );
+                
               },
               child: Text("OK"),
             ),
