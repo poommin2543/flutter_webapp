@@ -4,7 +4,7 @@ import 'gate_result_page.dart'; // นำเข้า GateResultPage ที่�
 import 'constants.dart'; // นำเข้า AppConstants
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-// import 'intro_page.dart'; // สำหรับ Intro ของบทที่ 1 หรืออื่นๆ
+import 'intro_page.dart'; // สำหรับ Intro ของบทที่ 1 หรืออื่นๆ
 
 class RouteSelectionPage extends StatefulWidget {
   final String username;
@@ -34,19 +34,21 @@ class _RouteSelectionPageState extends State<RouteSelectionPage> {
   // กำหนดเส้นทาง
   final List<Map<String, dynamic>> routes = [
     {'id': 1, 'name': 'เส้นทางที่ 1', 'isUnlocked': true, 'gateX': -0.6, 'chapterDescription': 'บททดสอบเกี่ยวกับข้อมูลเบื้องต้น'},
-    {'id': 2, 'name': 'เส้นทางที่ 2', 'isUnlocked': false, 'gateX': 0.0, 'chapterDescription': 'บททดสอบเกี่ยวกับความเข้าใจเกี่ยวกับบุหรี่ไฟฟ้า'},
-    {'id': 3, 'name': 'เส้นทางที่ 3', 'isUnlocked': false, 'gateX': 0.6, 'chapterDescription': 'บททดสอบเกี่ยวกับการความสามารถในการสื่อสารและประเมินข้อมูล'},
+    {'id': 2, 'name': 'เส้นทางที่ 2', 'isUnlocked': true, 'gateX': 0.0, 'chapterDescription': 'บททดสอบเกี่ยวกับความเข้าใจเกี่ยวกับบุหรี่ไฟฟ้า'}, // **ปรับเป็น true**
+    {'id': 3, 'name': 'เส้นทางที่ 3', 'isUnlocked': true, 'gateX': 0.6, 'chapterDescription': 'บททดสอบเกี่ยวกับการความสามารถในการสื่อสารและประเมินข้อมูล'}, // **ปรับเป็น true**
   ];
 
   @override
   void initState() {
     super.initState();
-    // อัปเดตสถานะการปลดล็อคเส้นทางตาม currentRouteId ของผู้ใช้ที่ Login มา
-    for (var route in routes) {
-      if (route['id'] <= widget.currentRouteId) {
-        route['isUnlocked'] = true;
-      }
-    }
+    // ตอนนี้ไม่จำเป็นต้องใช้ลูปนี้แล้ว เนื่องจากเรา hardcode isUnlocked เป็น true
+    // หากต้องการให้การปลดล็อคยังขึ้นอยู่กับความคืบหน้าของผู้ใช้ใน Backend
+    // ให้คงโค้ดนี้ไว้และแก้ไข 'isUnlocked' ใน List 'routes' ให้เป็น false ตั้งต้น
+    // for (var route in routes) {
+    //   if (route['id'] <= widget.currentRouteId) {
+    //     route['isUnlocked'] = true;
+    //   }
+    // }
   }
 
   // ฟังก์ชันสำหรับเคลื่อนย้ายตัวละครไปยังประตูและนำทาง
@@ -110,6 +112,13 @@ class _RouteSelectionPageState extends State<RouteSelectionPage> {
 
   @override
   Widget build(BuildContext context) {
+    // การวนลูปนี้อาจไม่จำเป็นแล้ว ถ้า routes ถูกกำหนดให้ isUnlocked: true ตั้งแต่แรก
+    // แต่เก็บไว้เพื่อการแสดงผล icon lock เผื่อมีการเปลี่ยนแปลง logic ในอนาคต
+    for (var route in routes) {
+      // route['isUnlocked'] = route['id'] <= widget.currentRouteId; // Old logic
+      // No change needed here if you want all routes unlocked by default in the list above.
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('เลือกประตูของคุณ'),
@@ -138,12 +147,13 @@ class _RouteSelectionPageState extends State<RouteSelectionPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: routes.map((route) {
+                  // หากเรา hardcode isUnlocked เป็น true แล้ว isLocked จะเป็น false เสมอ
                   bool isLocked = !route['isUnlocked'];
                   // กำหนดข้อความแสดงว่าเส้นทางนี้คือเส้นทางปัจจุบันที่ทำค้างไว้
                   bool isCurrentRoute = route['id'] == widget.currentRouteId && widget.currentChapter <= 5;
                   String buttonText = route['name'];
                   if (isLocked) {
-                    buttonText = 'Locked';
+                    buttonText = 'Locked'; // จะไม่เกิดขึ้นแล้วถ้า isUnlocked เป็น true
                   } else if (isCurrentRoute) {
                     buttonText = 'เล่นต่อ: ${route['name']} (บทที่ ${widget.currentChapter})';
                   } else {
@@ -168,7 +178,7 @@ class _RouteSelectionPageState extends State<RouteSelectionPage> {
                         alignment: Alignment.center,
                         children: [
                           Image.asset('assets/images/Gate.webp', height: 160),
-                          if (isLocked)
+                          if (isLocked) // ถ้า isLocked เป็น false ก็จะไม่แสดง icon lock
                             Icon(
                               Icons.lock,
                               size: 60,

@@ -1,33 +1,50 @@
 // lib/intro_page.dart
 import 'package:flutter/material.dart';
-import 'chapter1.dart'; // สำหรับการไปหน้า Chapter1
-import 'chapter2.dart'; // สำหรับการไปหน้า Chapter2
-import 'chapter3.dart'; // สำหรับการไปหน้า Chapter3
-import 'chapter4.dart'; // สำหรับการไปหน้า Chapter4
-import 'chapter5.dart'; // สำหรับการไปหน้า Chapter5
-// import 'intro2_page.dart'; // ไม่จำเป็นต้อง import ถ้าไม่ใช้ IntroPage แยกสำหรับบทที่ 2
+import 'chapter1.dart'; // Route 1, Chapter 1
+import 'chapter2.dart'; // Route 1, Chapter 2
+import 'chapter3.dart'; // Route 1, Chapter 3
+import 'chapter4.dart'; // Route 1, Chapter 4
+import 'chapter5.dart'; // Route 1, Chapter 5
+
+// Chapters for Route 2
+import 'chapter1_route2.dart';
+import 'chapter2_route2.dart';
+import 'chapter3_route2.dart';
+import 'chapter4_route2.dart';
+import 'chapter5_route2.dart';
+
+// Chapters for Route 3
+import 'chapter1_route3.dart';
+import 'chapter2_route3.dart';
+import 'chapter3_route3.dart';
+import 'chapter4_route3.dart';
+import 'chapter5_route3.dart';
 
 class IntroPage extends StatelessWidget {
   final String username;
-  final int currentRouteId; // เพิ่ม: เพื่อส่งผ่านค่า route_id ที่เลือกแล้ว
-  final String selectedCharacterName; // เพิ่ม: เพื่อส่งชื่อตัวละครที่เลือก
-  final int? targetChapter; // **แก้ไขตรงนี้: เพิ่มพารามิเตอร์ targetChapter เป็น optional**
+  final int currentRouteId;
+  final String selectedCharacterName;
+  final int? targetChapter;
 
   IntroPage({
     required this.username,
-    required this.currentRouteId, // ต้องรับค่านี้มา
-    required this.selectedCharacterName, // ต้องรับค่านี้มา
-    this.targetChapter, // **แก้ไขตรงนี้: กำหนดให้เป็น optional named parameter**
+    required this.currentRouteId,
+    required this.selectedCharacterName,
+    this.targetChapter,
   });
 
   @override
   Widget build(BuildContext context) {
     String introText = 'ยินดีต้อนรับเข้าสู่เกม!\nคุณจะได้พบกับบทเรียนและสถานการณ์\nที่จะช่วยให้คุณเข้าใจผลของการสูบบุหรี่ไฟฟ้า';
     String buttonText = 'เริ่มบทที่ 1';
-    Widget nextPageWidget = Chapter1Page( // Default to Chapter 1
+    Widget nextPageWidget;
+
+    // กำหนด nextPageWidget ตาม RouteId และ Chapter ที่ต้องการ
+    // Default to Chapter 1, Route 1
+    nextPageWidget = Chapter1Page(
       chapter: 1,
       username: username,
-      routeId: currentRouteId,
+      routeId: 1, // Default for Route 1
       onFinished: () {},
     );
 
@@ -36,61 +53,71 @@ class IntroPage extends StatelessWidget {
                   '${_getChapterIntroDescription(targetChapter!)}';
       buttonText = 'เริ่มบทที่ $targetChapter';
 
-      switch (targetChapter) {
-        case 1:
-          nextPageWidget = Chapter1Page(
-            chapter: 1,
-            username: username,
-            routeId: currentRouteId,
-            onFinished: () {},
-          );
+      switch (currentRouteId) {
+        case 1: // Route 1
+          switch (targetChapter) {
+            case 1:
+              nextPageWidget = Chapter1Page(chapter: 1, username: username, routeId: currentRouteId, onFinished: () {});
+              break;
+            case 2:
+              nextPageWidget = Chapter2Page(chapter: 2, username: username, routeId: currentRouteId, onFinished: () {});
+              break;
+            case 3:
+              nextPageWidget = Chapter3Page(chapter: 3, username: username, routeId: currentRouteId, onFinished: () {});
+              break;
+            case 4:
+              nextPageWidget = Chapter4Page(chapter: 4, username: username, routeId: currentRouteId, onFinished: () {});
+              break;
+            case 5:
+              nextPageWidget = Chapter5Page(chapter: 5, username: username, routeId: currentRouteId, onFinished: () {});
+              break;
+          }
           break;
-        case 2:
-          nextPageWidget = Chapter2Page( // บทที่ 2 ไม่มี Intro แยก ให้ไป Chapter2 โดยตรง
-            username: username,
-            chapter: 2,
-            routeId: currentRouteId,
-            onFinished: (){},
-          );
+        case 2: // Route 2
+          switch (targetChapter) {
+            case 1:
+              nextPageWidget = Chapter1Route2Page(chapter: 1, username: username, routeId: currentRouteId, onFinished: () {});
+              break;
+            case 2:
+              nextPageWidget = Chapter2Route2Page(chapter: 2, username: username, routeId: currentRouteId, onFinished: () {});
+              break;
+            case 3:
+              nextPageWidget = Chapter3Route2Page(chapter: 3, username: username, routeId: currentRouteId, onFinished: () {});
+              break;
+            case 4:
+              nextPageWidget = Chapter4Route2Page(chapter: 4, username: username, routeId: currentRouteId, onFinished: () {});
+              break;
+            case 5:
+              nextPageWidget = Chapter5Route2Page(chapter: 5, username: username, routeId: currentRouteId, onFinished: () {});
+              break;
+          }
           break;
-        case 3:
-          nextPageWidget = Chapter3Page(
-            username: username,
-            chapter: 3,
-            routeId: currentRouteId,
-            onFinished: (){},
-          );
+        case 3: // Route 3
+          switch (targetChapter) {
+            case 1:
+              nextPageWidget = Chapter1Route3Page(chapter: 1, username: username, routeId: currentRouteId, onFinished: () {});
+              break;
+            case 2:
+              nextPageWidget = Chapter2Route3Page(chapter: 2, username: username, routeId: currentRouteId, onFinished: () {});
+              break;
+            case 3:
+              nextPageWidget = Chapter3Route3Page(chapter: 3, username: username, routeId: currentRouteId, onFinished: () {});
+              break;
+            case 4:
+              nextPageWidget = Chapter4Route3Page(chapter: 4, username: username, routeId: currentRouteId, onFinished: () {});
+              break;
+            case 5:
+              nextPageWidget = Chapter5Route3Page(chapter: 5, username: username, routeId: currentRouteId, onFinished: () {});
+              break;
+          }
           break;
-        case 4:
-          nextPageWidget = Chapter4Page(
-            username: username,
-            chapter: 4,
-            routeId: currentRouteId,
-            onFinished: (){},
-          );
-          break;
-        case 5:
-          nextPageWidget = Chapter5Page(
-            username: username,
-            chapter: 5,
-            routeId: currentRouteId,
-            onFinished: (){},
-          );
-          break;
-        default:
-          nextPageWidget = Chapter1Page( // Fallback
-            chapter: 1,
-            username: username,
-            routeId: currentRouteId,
-            onFinished: () {},
-          );
       }
     }
 
     return Scaffold(
       appBar: AppBar(
         title: Text(targetChapter == null ? 'บทนำ' : 'บทนำบทที่ $targetChapter'),
-        automaticallyImplyLeading: false, // ❌ ซ่อนปุ่ม back
+        automaticallyImplyLeading: false,
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -99,7 +126,7 @@ class IntroPage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Image.asset(
-                'assets/images/Introduction1.webp', // ใส่ภาพแนะนำเกม
+                'assets/images/Introduction1.webp',
                 height: 600,
               ),
               const SizedBox(height: 20),
@@ -114,7 +141,7 @@ class IntroPage extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 ),
                 onPressed: () {
-                  Navigator.pushReplacement( // ใช้ pushReplacement เพื่อไม่ให้ย้อนกลับมาที่ Intro Page เดิม
+                  Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
                       builder: (context) => nextPageWidget,
@@ -124,12 +151,11 @@ class IntroPage extends StatelessWidget {
                 child: Text(buttonText, style: const TextStyle(fontSize: 18)),
               ),
               const SizedBox(height: 20),
-              // ปุ่มกลับหน้าเลือกเส้นทาง
               ElevatedButton.icon(
                 icon: const Icon(Icons.arrow_back),
                 label: const Text('กลับหน้าเลือกเส้นทาง'),
                 onPressed: () {
-                  Navigator.pop(context); // กลับไปยัง RouteSelectionPage
+                  Navigator.pop(context);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.grey,
@@ -145,7 +171,6 @@ class IntroPage extends StatelessWidget {
     );
   }
 
-  // ฟังก์ชันช่วยสำหรับข้อความแนะนำแต่ละบท
   String _getChapterIntroDescription(int chapter) {
     switch (chapter) {
       case 1:
