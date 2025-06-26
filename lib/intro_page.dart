@@ -1,23 +1,95 @@
 // lib/intro_page.dart
 import 'package:flutter/material.dart';
 import 'chapter1.dart'; // สำหรับการไปหน้า Chapter1
+import 'chapter2.dart'; // สำหรับการไปหน้า Chapter2
+import 'chapter3.dart'; // สำหรับการไปหน้า Chapter3
+import 'chapter4.dart'; // สำหรับการไปหน้า Chapter4
+import 'chapter5.dart'; // สำหรับการไปหน้า Chapter5
+// import 'intro2_page.dart'; // ไม่จำเป็นต้อง import ถ้าไม่ใช้ IntroPage แยกสำหรับบทที่ 2
 
 class IntroPage extends StatelessWidget {
   final String username;
   final int currentRouteId; // เพิ่ม: เพื่อส่งผ่านค่า route_id ที่เลือกแล้ว
   final String selectedCharacterName; // เพิ่ม: เพื่อส่งชื่อตัวละครที่เลือก
+  final int? targetChapter; // **แก้ไขตรงนี้: เพิ่มพารามิเตอร์ targetChapter เป็น optional**
 
   IntroPage({
     required this.username,
     required this.currentRouteId, // ต้องรับค่านี้มา
     required this.selectedCharacterName, // ต้องรับค่านี้มา
+    this.targetChapter, // **แก้ไขตรงนี้: กำหนดให้เป็น optional named parameter**
   });
 
   @override
   Widget build(BuildContext context) {
+    String introText = 'ยินดีต้อนรับเข้าสู่เกม!\nคุณจะได้พบกับบทเรียนและสถานการณ์\nที่จะช่วยให้คุณเข้าใจผลของการสูบบุหรี่ไฟฟ้า';
+    String buttonText = 'เริ่มบทที่ 1';
+    Widget nextPageWidget = Chapter1Page( // Default to Chapter 1
+      chapter: 1,
+      username: username,
+      routeId: currentRouteId,
+      onFinished: () {},
+    );
+
+    if (targetChapter != null) {
+      introText = 'เตรียมพร้อมสำหรับบทเรียนบทที่ $targetChapter!\nบทเรียนนี้จะช่วยให้คุณ: \n\n'
+                  '${_getChapterIntroDescription(targetChapter!)}';
+      buttonText = 'เริ่มบทที่ $targetChapter';
+
+      switch (targetChapter) {
+        case 1:
+          nextPageWidget = Chapter1Page(
+            chapter: 1,
+            username: username,
+            routeId: currentRouteId,
+            onFinished: () {},
+          );
+          break;
+        case 2:
+          nextPageWidget = Chapter2Page( // บทที่ 2 ไม่มี Intro แยก ให้ไป Chapter2 โดยตรง
+            username: username,
+            chapter: 2,
+            routeId: currentRouteId,
+            onFinished: (){},
+          );
+          break;
+        case 3:
+          nextPageWidget = Chapter3Page(
+            username: username,
+            chapter: 3,
+            routeId: currentRouteId,
+            onFinished: (){},
+          );
+          break;
+        case 4:
+          nextPageWidget = Chapter4Page(
+            username: username,
+            chapter: 4,
+            routeId: currentRouteId,
+            onFinished: (){},
+          );
+          break;
+        case 5:
+          nextPageWidget = Chapter5Page(
+            username: username,
+            chapter: 5,
+            routeId: currentRouteId,
+            onFinished: (){},
+          );
+          break;
+        default:
+          nextPageWidget = Chapter1Page( // Fallback
+            chapter: 1,
+            username: username,
+            routeId: currentRouteId,
+            onFinished: () {},
+          );
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('บทนำ'),
+        title: Text(targetChapter == null ? 'บทนำ' : 'บทนำบทที่ $targetChapter'),
         automaticallyImplyLeading: false, // ❌ ซ่อนปุ่ม back
       ),
       body: Center(
@@ -31,15 +103,9 @@ class IntroPage extends StatelessWidget {
                 height: 600,
               ),
               const SizedBox(height: 20),
-              const Text(
-                'ยินดีต้อนรับเข้าสู่เกม!',
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'คุณจะได้พบกับบทเรียนและสถานการณ์\nที่จะช่วยให้คุณเข้าใจผลของการสูบบุหรี่ไฟฟ้า',
-                style: TextStyle(fontSize: 18),
+              Text(
+                introText,
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 40),
@@ -48,22 +114,14 @@ class IntroPage extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 ),
                 onPressed: () {
-                  Navigator.push(
+                  Navigator.pushReplacement( // ใช้ pushReplacement เพื่อไม่ให้ย้อนกลับมาที่ Intro Page เดิม
                     context,
                     MaterialPageRoute(
-                      builder: (context) => Chapter1Page(
-                        chapter: 1, // กำหนดหมายเลขบทที่ต้องการ (ในที่นี้คือ Chapter 1)
-                        username: username,
-                        routeId: currentRouteId, // ส่ง routeId ที่เลือกแล้ว
-                        onFinished: () {
-                          // ตัวอย่างเมื่อเสร็จสิ้นการทำ Chapter1 แล้ว
-                          // อาจจะ fetch score หรือทำอะไรบางอย่าง
-                        },
-                      ),
+                      builder: (context) => nextPageWidget,
                     ),
                   );
                 },
-                child: const Text('เริ่มบทที่ 1', style: TextStyle(fontSize: 18)),
+                child: Text(buttonText, style: const TextStyle(fontSize: 18)),
               ),
               const SizedBox(height: 20),
               // ปุ่มกลับหน้าเลือกเส้นทาง
@@ -85,5 +143,23 @@ class IntroPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  // ฟังก์ชันช่วยสำหรับข้อความแนะนำแต่ละบท
+  String _getChapterIntroDescription(int chapter) {
+    switch (chapter) {
+      case 1:
+        return 'ทำความเข้าใจข้อมูลเบื้องต้นเกี่ยวกับบุหรี่ไฟฟ้า';
+      case 2:
+        return 'ประเมินความรู้ความเข้าใจเกี่ยวกับบุหรี่ไฟฟ้าผ่านวิดีโอและคำถาม';
+      case 3:
+        return 'ฝึกฝนความสามารถในการสื่อสารและประเมินข้อมูลที่ได้รับ';
+      case 4:
+        return 'เรียนรู้การตัดสินใจที่ถูกต้องเมื่อถูกชักชวนให้สูบบุหรี่ไฟฟ้า';
+      case 5:
+        return 'เรียนรู้การจัดการตนเองและสรุปบทเรียนสำคัญจากประสบการณ์ที่ผ่านมา';
+      default:
+        return 'เตรียมพร้อมสำหรับบทเรียนต่อไป!';
+    }
   }
 }

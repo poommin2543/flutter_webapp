@@ -59,6 +59,7 @@ class _LoginPageState extends State<LoginPage> {
           _message = 'เข้าสู่ระบบสำเร็จ!';
         });
 
+        // นำทางไปยัง WelcomePage พร้อมส่งข้อมูลความคืบหน้า
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(

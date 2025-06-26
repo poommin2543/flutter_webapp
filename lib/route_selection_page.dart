@@ -4,12 +4,13 @@ import 'gate_result_page.dart'; // นำเข้า GateResultPage ที่�
 import 'constants.dart'; // นำเข้า AppConstants
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'intro_page.dart'; // สำหรับ Intro ของบทที่ 1 หรืออื่นๆ
 
 class RouteSelectionPage extends StatefulWidget {
   final String username;
   final String fullName;
-  final int currentChapter; // รับค่า currentChapter มาด้วย
-  final int currentRouteId; // รับค่า currentRouteId มาด้วย
+  final int currentChapter; // รับค่า currentChapter มาด้วย (จาก Backend)
+  final int currentRouteId; // รับค่า currentRouteId มาด้วย (จาก Backend)
   final String selectedCharacterName; // รับชื่อตัวละครที่เลือก
 
   RouteSelectionPage({
@@ -32,13 +33,24 @@ class _RouteSelectionPageState extends State<RouteSelectionPage> {
 
   // กำหนดเส้นทาง
   final List<Map<String, dynamic>> routes = [
-    {'id': 1, 'name': 'เส้นทางที่ 1', 'isUnlocked': true, 'gateX': -0.6},
-    {'id': 2, 'name': 'เส้นทางที่ 2', 'isUnlocked': false, 'gateX': 0.0},
-    {'id': 3, 'name': 'เส้นทางที่ 3', 'isUnlocked': false, 'gateX': 0.6},
+    {'id': 1, 'name': 'เส้นทางที่ 1', 'isUnlocked': true, 'gateX': -0.6, 'chapterDescription': 'บททดสอบเกี่ยวกับข้อมูลเบื้องต้น'},
+    {'id': 2, 'name': 'เส้นทางที่ 2', 'isUnlocked': false, 'gateX': 0.0, 'chapterDescription': 'บททดสอบเกี่ยวกับความเข้าใจเกี่ยวกับบุหรี่ไฟฟ้า'},
+    {'id': 3, 'name': 'เส้นทางที่ 3', 'isUnlocked': false, 'gateX': 0.6, 'chapterDescription': 'บททดสอบเกี่ยวกับการความสามารถในการสื่อสารและประเมินข้อมูล'},
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    // อัปเดตสถานะการปลดล็อคเส้นทางตาม currentRouteId ของผู้ใช้ที่ Login มา
+    for (var route in routes) {
+      if (route['id'] <= widget.currentRouteId) {
+        route['isUnlocked'] = true;
+      }
+    }
+  }
+
   // ฟังก์ชันสำหรับเคลื่อนย้ายตัวละครไปยังประตูและนำทาง
-  void moveToGate(int routeId, double gateX) async {
+  void moveToGate(int selectedRouteId, double gateX) async {
     setState(() {
       _characterX = gateX;
       _characterY = -0.6; // ตัวละครจะเคลื่อนที่ไปด้านบน
@@ -46,15 +58,28 @@ class _RouteSelectionPageState extends State<RouteSelectionPage> {
 
     await Future.delayed(_duration); // รอให้ Animation จบ
 
-    // อัปเดต current_route_id ใน backend
+    if (!mounted) return;
+
+    // ตรวจสอบว่าผู้ใช้เลือกเส้นทางปัจจุบันที่ทำค้างไว้หรือไม่
+    int chapterToStart = 1;
+    if (selectedRouteId == widget.currentRouteId) {
+      // ถ้าเลือกเส้นทางเดิมที่เคยทำค้างไว้ ให้ไปที่ chapter ที่ค้างไว้
+      chapterToStart = widget.currentChapter;
+    } else {
+      // ถ้าเลือกเส้นทางใหม่ ให้เริ่มต้นที่ chapter 1 ของเส้นทางนั้น
+      chapterToStart = 1;
+    }
+
+    // อัปเดต current_chapter และ current_route_id ใน backend
+    // ไม่ว่าจะเป็นการเล่นต่อ หรือเริ่มเส้นทางใหม่ ก็ต้องอัปเดต state ใน backend
     try {
       final response = await http.post(
         Uri.parse('${AppConstants.API_BASE_URL}/update_progress'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'username': widget.username,
-          'current_chapter': 1, // เริ่มต้นบทที่ 1 ของเส้นทางใหม่
-          'current_route_id': routeId, // อัปเดต route_id
+          'current_chapter': chapterToStart,
+          'current_route_id': selectedRouteId,
         }),
       );
 
@@ -68,15 +93,16 @@ class _RouteSelectionPageState extends State<RouteSelectionPage> {
     }
 
     // นำทางไปยัง GateResultPage โดยส่งข้อมูล routeId และ chapter ที่จะไปต่อ
+    // GateResultPage จะตัดสินใจว่าจะไปหน้า IntroPage หรือ ChapterPage ที่เหมาะสม
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (context) => GateResultPage(
           username: widget.username,
-          nextChapter: 1, // จะเริ่มบทที่ 1 ของเส้นทางที่เลือก
-          nextRouteId: routeId, // ส่ง routeId ที่เลือกไปให้ GateResultPage
-          message: 'คุณเลือก${routes.firstWhere((r) => r['id'] == routeId)['name']}ได้แล้ว 🎉',
-          chapterDescription: 'บททดสอบเกี่ยวกับข้อมูลเบื้องต้น', // คำอธิบายสำหรับบทแรกของเส้นทาง
+          nextChapter: chapterToStart, // จะไปบทที่ถูกต้องตามความคืบหน้า
+          nextRouteId: selectedRouteId, // ส่ง routeId ที่เลือกไปให้ GateResultPage
+          message: 'คุณเลือก${routes.firstWhere((r) => r['id'] == selectedRouteId)['name']}ได้แล้ว 🎉',
+          chapterDescription: routes.firstWhere((r) => r['id'] == selectedRouteId)['chapterDescription'], // คำอธิบายสำหรับบทแรกของเส้นทาง
         ),
       ),
     );
@@ -84,13 +110,6 @@ class _RouteSelectionPageState extends State<RouteSelectionPage> {
 
   @override
   Widget build(BuildContext context) {
-    // กำหนดสถานะการปลดล็อคเส้นทางตาม currentRouteId ของผู้ใช้
-    for (var route in routes) {
-      if (route['id'] <= widget.currentRouteId) {
-        route['isUnlocked'] = true;
-      }
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('เลือกประตูของคุณ'),
@@ -120,16 +139,28 @@ class _RouteSelectionPageState extends State<RouteSelectionPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: routes.map((route) {
                   bool isLocked = !route['isUnlocked'];
+                  // กำหนดข้อความแสดงว่าเส้นทางนี้คือเส้นทางปัจจุบันที่ทำค้างไว้
+                  bool isCurrentRoute = route['id'] == widget.currentRouteId && widget.currentChapter <= 5;
+                  String buttonText = route['name'];
+                  if (isLocked) {
+                    buttonText = 'Locked';
+                  } else if (isCurrentRoute) {
+                    buttonText = 'เล่นต่อ: ${route['name']} (บทที่ ${widget.currentChapter})';
+                  } else {
+                    buttonText = 'เริ่ม: ${route['name']}';
+                  }
+
                   return Column(
                     children: [
                       ElevatedButton(
                         onPressed: isLocked
                             ? null
                             : () => moveToGate(route['id'], route['gateX']),
-                        child: Text(route['name']),
+                        child: Text(buttonText),
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
-                              isLocked ? Colors.grey : Colors.blue,
+                              isLocked ? Colors.grey : (isCurrentRoute ? Colors.orange : Colors.blue),
+                          minimumSize: const Size(150, 40), // กำหนดขนาดขั้นต่ำ
                         ),
                       ),
                       const SizedBox(height: 10),
