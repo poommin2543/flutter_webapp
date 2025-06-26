@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 // import 'main.dart'; // สำหรับการกลับไปหน้า LoginPage
-// import 'chapter1.dart'; // สำหรับการไปหน้า Chapter1
+import 'chapter1.dart'; // สำหรับการไปหน้า Chapter1
 import 'bonus_page.dart';
 
 class IntroPage extends StatelessWidget {

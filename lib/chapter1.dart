@@ -217,7 +217,6 @@ class _Chapter1PageState extends State<Chapter1Page> {
                   builder: (context) => GateResultPage(
                     chapter: widget.chapter + 1,
                     username: widget.username,
-                    
                   ),
                 ),
               );
@@ -232,7 +231,12 @@ class _Chapter1PageState extends State<Chapter1Page> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('บทที่ ${widget.chapter}')),
+      appBar: AppBar(
+        title: Text(
+          'บทที่ ${widget.chapter} – ข้อที่ ${currentIndex + 1}/${questions.length}',
+        ),
+        automaticallyImplyLeading: false,
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),

@@ -39,7 +39,10 @@ class _BonusPageState extends State<BonusPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('เลือกประตูของคุณ')),
+      appBar: AppBar(
+        title: Text('เลือกประตูของคุณ'),
+        automaticallyImplyLeading: false,
+      ),
       body: Stack(
         children: [
           // วาดเส้นทาง

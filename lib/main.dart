@@ -109,7 +109,7 @@ class _LoginPageState extends State<LoginPage> {
               Text(
                 'ฉลาดรู้เท่าทันบุหรี่ไฟฟ้า',
                 style: TextStyle(
-                  color: const Color.fromARGB(255, 2, 82, 16),
+                  color: const Color.fromARGB(255, 5, 82, 16),
                   fontSize: 30,
                   fontWeight: FontWeight.bold,
                 ),
@@ -131,7 +131,7 @@ class _LoginPageState extends State<LoginPage> {
                 Image.asset('assets/images/login1.png', height: 200),
                 SizedBox(width: 20),
                 //Image.asset('assets/images/login1.png', height: 100),
-                Image.asset('assets/images/login2.png', height: 200),
+                Image.asset('assets/images/login2.png', height: 300),
               ],
             ),
             SizedBox(height: 20),

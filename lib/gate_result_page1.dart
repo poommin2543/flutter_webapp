@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
-import 'chapter2.dart'; // อย่าลืม import
+import 'intro2_page.dart'; // อย่าลืม import
 
 class GateResultPage extends StatefulWidget {
   final String username; // รับค่า username จาก constructor
   final int chapter;
-  GateResultPage({required this.username,required this.chapter}); // Constructor รับค่า username
+  GateResultPage({
+    required this.username,
+    required this.chapter,
+  }); // Constructor รับค่า username
 
   @override
   _GateResultPageState createState() => _GateResultPageState();
@@ -19,8 +22,8 @@ class _GateResultPageState extends State<GateResultPage> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => Chapter2Page(
-            chapter: 2,
+          builder: (context) => Chapter2IntroPage(
+            chapter: 1,
             username: widget.username, // ส่ง username ไปยัง Chapter1Page
             onFinished: () {},
           ),

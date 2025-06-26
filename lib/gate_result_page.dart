@@ -32,7 +32,10 @@ class _GateResultPageState extends State<GateResultPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("คุณมาถึงแล้ว!")),
+      appBar: AppBar(
+        title: Text("คุณมาถึงแล้ว!"),
+        automaticallyImplyLeading: false,
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
