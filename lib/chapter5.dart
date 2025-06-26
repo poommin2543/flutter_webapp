@@ -95,33 +95,43 @@ class _Chapter5PageState extends State<Chapter5Page> {
       }
     }
 
+    print('Chapter ${widget.chapter} (Route ${widget.routeId}) finished. Final score: $score');
+
+    // กำหนดค่าสำหรับส่งไป Backend
+    bool isFinishedChapter = (widget.chapter == 5); // ถ้าเป็นบทที่ 5 คือจบบทเรียนในเส้นทางนั้น
+    int nextChapterToSend = widget.chapter + 1; // บทถัดไป (อาจเป็น 6 ถ้าจบบท 5)
+    int nextRouteIDToSend = widget.routeId;     // เส้นทางยังคงเดิม
+
+    // ถ้าจบบทที่ 5 แล้ว (isFinishedChapter = true)
+    // ให้ nextChapterToSend เป็น 6 และ nextRouteIDToSend เป็น 1
+    if (isFinishedChapter) {
+      nextChapterToSend = 6;
+      nextRouteIDToSend = 1;
+    }
+
     try {
       // ส่งคะแนนไป backend พร้อม route_id
-      await http.post(
+      final response = await http.post(
         Uri.parse('${AppConstants.API_BASE_URL}/submit_score'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'username': widget.username,
-          'route_id': widget.routeId, // ส่ง route_id
-          'chapter_number': widget.chapter,
+          'chapter': widget.chapter,
           'score': score,
+          'route_id': widget.routeId, // ส่ง route_id
+          'is_finished': isFinishedChapter,
+          'next_chapter': nextChapterToSend,
+          'next_route_id': nextRouteIDToSend,
         }),
       );
 
-      // อัปเดตความคืบหน้าของบทเรียน (ไม่ไปบทต่อไปแล้ว แต่เป็นการจบเส้นทาง)
-      // อาจจะเซ็ต current_chapter เป็น 1 และ current_route_id เป็น route_id ที่สำเร็จแล้ว + 1
-      // เพื่อปลดล็อค route ถัดไป หรือนำไปหน้า Summary
-      await http.post(
-        Uri.parse('${AppConstants.API_BASE_URL}/update_progress'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'username': widget.username,
-          'current_chapter': 1, // Reset ไปบทที่ 1
-          'current_route_id': widget.routeId + 1, // ปลดล็อค route ถัดไป
-        }),
-      );
+      if (response.statusCode == 200) {
+        print('Score submitted successfully! Progress updated on Backend.');
+      } else {
+        print('Failed to submit score: ${response.statusCode} - ${response.body}');
+      }
     } catch (e) {
-      print('Error submitting score or updating progress: $e');
+      print('Error submitting score: $e');
     }
 
     Navigator.pop(dialogContext); // ปิด AlertDialog ของแบบทดสอบ
@@ -129,6 +139,7 @@ class _Chapter5PageState extends State<Chapter5Page> {
     if (!mounted) return;
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: const Text("คะแนนของคุณ"),
         content: Text("คุณทำคะแนนได้ $score จาก ${answers.length} คะแนน"),

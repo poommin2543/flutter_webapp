@@ -142,29 +142,48 @@ class _Chapter3PageState extends State<Chapter3Page> {
       _loadVideoAtIndex(currentIndex);
     } else {
       // เมื่อจบบทเรียน
-      await http.post(
-        Uri.parse('${AppConstants.API_BASE_URL}/submit_score'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'username': widget.username,
-          'route_id': widget.routeId, // ส่ง route_id
-          'chapter_number': widget.chapter,
-          'score': totalScore,
-        }),
-      );
-      await http.post(
-        Uri.parse('${AppConstants.API_BASE_URL}/update_progress'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'username': widget.username,
-          'current_chapter': widget.chapter + 1,
-          'current_route_id': widget.routeId, // ส่ง routeId ปัจจุบัน
-        }),
-      );
+      print('Chapter ${widget.chapter} (Route ${widget.routeId}) finished. Final score: $totalScore');
+
+      // กำหนดค่าสำหรับส่งไป Backend
+      bool isFinishedChapter = (widget.chapter == 5); // ถ้าเป็นบทที่ 5 คือจบบทเรียนในเส้นทางนั้น
+      int nextChapterToSend = widget.chapter + 1; // บทถัดไป (อาจเป็น 6 ถ้าจบบท 5)
+      int nextRouteIDToSend = widget.routeId;     // เส้นทางยังคงเดิม
+
+      // ถ้าจบบทที่ 5 แล้ว (isFinishedChapter = true)
+      // ให้ nextChapterToSend เป็น 6 และ nextRouteIDToSend เป็น 1
+      if (isFinishedChapter) {
+        nextChapterToSend = 6;
+        nextRouteIDToSend = 1;
+      }
+
+      try {
+        final response = await http.post(
+          Uri.parse('${AppConstants.API_BASE_URL}/submit_score'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'username': widget.username,
+            'chapter': widget.chapter,
+            'score': totalScore,
+            'route_id': widget.routeId,
+            'is_finished': isFinishedChapter,
+            'next_chapter': nextChapterToSend,
+            'next_route_id': nextRouteIDToSend,
+          }),
+        );
+
+        if (response.statusCode == 200) {
+          print('Score submitted successfully! Progress updated on Backend.');
+        } else {
+          print('Failed to submit score: ${response.statusCode} - ${response.body}');
+        }
+      } catch (e) {
+        print('Error submitting score: $e');
+      }
 
       if (!mounted) return;
       showDialog(
         context: context,
+        barrierDismissible: false,
         builder: (_) => AlertDialog(
           title: const Text("คะแนนของคุณ"),
           content: Text("คุณได้ $totalScore จาก ${answers.length} ข้อ"),
@@ -178,8 +197,8 @@ class _Chapter3PageState extends State<Chapter3Page> {
                     builder: (_) => GateResultPage(
                       chapterDescription: 'บททดสอบเกี่ยวกับการตัดสินใจ',
                       message: 'จบบทที่ ${widget.chapter} แล้ว 🎉',
-                      nextChapter: widget.chapter + 1,
-                      nextRouteId: widget.routeId, // ส่ง routeId ปัจจุบัน
+                      nextChapter: nextChapterToSend,
+                      nextRouteId: nextRouteIDToSend,
                       username: widget.username,
                     ),
                   ),
@@ -206,7 +225,7 @@ class _Chapter3PageState extends State<Chapter3Page> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'บทที่ ${widget.chapter} – ข้อที่ ${currentIndex + 1}/${videoIds.length}',
+          'เส้นทางที่ ${widget.routeId} บทที่ ${widget.chapter} – ข้อที่ ${currentIndex + 1}/${videoIds.length}',
         ),
         automaticallyImplyLeading: false,
       ),

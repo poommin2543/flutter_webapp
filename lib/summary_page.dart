@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'constants.dart';
-import 'main.dart'; // สำหรับกลับไป LoginPage (อาจเปลี่ยนเป็น WelcomePage)
 import 'welcome_page.dart'; // เพิ่ม: เพื่อกลับไปหน้า WelcomePage
-import 'survey_page.dart'; // ตรวจสอบว่ามีบรรทัดนี้
+import 'survey_page.dart'; // สำหรับปุ่มแบบสำรวจ
 
 class SummaryPage extends StatefulWidget {
   final String username;
@@ -19,18 +18,16 @@ class SummaryPage extends StatefulWidget {
 class _SummaryPageState extends State<SummaryPage> {
   // State variables to hold user data
   String _fullName = '';
-  int _totalScore = 0;
   int _age = 0;
   String _schoolLevel = '';
   String _school = '';
-  String _status = ''; // เพื่อรวมข้อมูลสถานะ
-  Map<String, dynamic> _chapterScores = {}; // เพิ่มสำหรับเก็บคะแนนรายบท
-  bool _isLoading = true;
-  String _errorMessage = '';
-
-  // สำหรับเก็บ current_chapter และ current_route_id
+  String _status = '';
   int _currentChapter = 1;
   int _currentRouteID = 1;
+  // Map เพื่อเก็บคะแนนรวมและคะแนนบทเรียนแยกตาม route_id
+  Map<int, Map<String, dynamic>> _routeSummaries = {};
+  bool _isLoading = true;
+  String _errorMessage = '';
 
   @override
   void initState() {
@@ -49,22 +46,31 @@ class _SummaryPageState extends State<SummaryPage> {
       final response = await http.get(
         Uri.parse(
           '${AppConstants.API_BASE_URL}/get_score?username=${widget.username}',
-        ), // <-- ใช้ URL ของ Go backend ที่รันอยู่
+        ),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
           _fullName = data['full_name'] ?? 'N/A';
-          _totalScore = data['total_score'] ?? 0;
-          _age = data['old'] ?? 0;
+          _age = data['age'] ?? 0; // แก้เป็น 'age' ตาม Backend
           _schoolLevel = data['school_level'] ?? 'N/A';
           _school = data['school'] ?? 'N/A';
-          _status = data['status'] ?? 'N/A'; // ดึง status
-          _chapterScores = Map<String, dynamic>.from(
-              data['chapter_score'] ?? {}); // แปลงเป็น Map<String, dynamic>
-          _currentChapter = data['current_chapter'] ?? 1; // ดึง current_chapter
-          _currentRouteID = data['current_route_id'] ?? 1; // ดึง current_route_id
+          _status = data['status'] ?? 'N/A';
+          _currentChapter = data['current_chapter'] ?? 1;
+          _currentRouteID = data['current_route_id'] ?? 1;
+
+          // แปลง route_summaries จาก dynamic map เป็น Map<int, Map<String, dynamic>>
+          if (data['route_summaries'] != null) {
+            _routeSummaries = (data['route_summaries'] as Map<String, dynamic>).map(
+              (key, value) => MapEntry(
+                int.parse(key), // แปลง key string เป็น int
+                Map<String, dynamic>.from(value), // แปลง value ให้เป็น Map<String, dynamic>
+              ),
+            );
+          } else {
+            _routeSummaries = {};
+          }
         });
       } else {
         setState(() {
@@ -76,6 +82,7 @@ class _SummaryPageState extends State<SummaryPage> {
       setState(() {
         _errorMessage = 'เกิดข้อผิดพลาดในการเชื่อมต่อ: $e';
       });
+      print('Error fetching user data: $e');
     } finally {
       setState(() {
         _isLoading = false;
@@ -115,11 +122,10 @@ class _SummaryPageState extends State<SummaryPage> {
                         _buildInfoRow('อายุ:', _age.toString()),
                         _buildInfoRow('ระดับชั้น:', _schoolLevel),
                         _buildInfoRow('โรงเรียน:', _school),
-                        _buildInfoRow('สถานะ:', _status), // แสดง status
-                        _buildInfoRow('คะแนนรวม:', _totalScore.toString()),
-                        const SizedBox(height: 20),
+                        _buildInfoRow('สถานะ:', _status),
+                        const SizedBox(height: 30),
                         const Text(
-                          'คะแนนแต่ละบทเรียน:',
+                          'คะแนนตามเส้นทาง:',
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -127,15 +133,39 @@ class _SummaryPageState extends State<SummaryPage> {
                           ),
                         ),
                         const SizedBox(height: 10),
-                        _chapterScores.isEmpty
-                            ? const Text('ยังไม่มีคะแนนบทเรียน')
+                        _routeSummaries.isEmpty
+                            ? const Text('ยังไม่มีข้อมูลคะแนนสำหรับเส้นทางใดๆ')
                             : Column(
-                                children: _chapterScores.entries.map((entry) {
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 4.0),
-                                    child: Text(
-                                      'บทที่ ${entry.key}: ${entry.value} คะแนน',
-                                      style: const TextStyle(fontSize: 16),
+                                children: _routeSummaries.entries.map((entry) {
+                                  int routeId = entry.key;
+                                  Map<String, dynamic> summary = entry.value;
+                                  int totalScore = summary['total_score'] ?? 0;
+                                  Map<String, int> chapterScores =
+                                      Map<String, int>.from(summary['chapter_scores'] ?? {});
+
+                                  return Card(
+                                    margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+                                    elevation: 4,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(15.0),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'เส้นทางที่ $routeId: คะแนนรวม $totalScore',
+                                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.deepPurple),
+                                          ),
+                                          const SizedBox(height: 10),
+                                          const Text('คะแนนแต่ละบท:', style: TextStyle(fontWeight: FontWeight.w600)),
+                                          ...chapterScores.entries.map((chapEntry) {
+                                            return Text(
+                                              '  บทที่ ${chapEntry.key}: ${chapEntry.value} คะแนน',
+                                              style: const TextStyle(fontSize: 16),
+                                            );
+                                          }).toList(),
+                                        ],
+                                      ),
                                     ),
                                   );
                                 }).toList(),
@@ -149,8 +179,8 @@ class _SummaryPageState extends State<SummaryPage> {
                                 builder: (context) => WelcomePage(
                                   username: widget.username,
                                   fullName: _fullName,
-                                  currentChapter: _currentChapter, // ส่ง currentChapter
-                                  currentRouteID: _currentRouteID, // ส่ง currentRouteID
+                                  currentChapter: _currentChapter,
+                                  currentRouteID: _currentRouteID,
                                 ),
                               ),
                             );
@@ -172,12 +202,11 @@ class _SummaryPageState extends State<SummaryPage> {
                           ),
                         ),
                         const SizedBox(height: 20),
-                        // ปุ่มสำหรับทำแบบประเมิน (Survey) - ถ้ามีแยกต่างหาก
                         ElevatedButton(
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => SurveyPage()), 
+                              MaterialPageRoute(builder: (context) => const SurveyPage()),
                             );
                           },
                           style: ElevatedButton.styleFrom(

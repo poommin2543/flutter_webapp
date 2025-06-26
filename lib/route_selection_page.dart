@@ -2,9 +2,8 @@
 import 'package:flutter/material.dart';
 import 'gate_result_page.dart'; // นำเข้า GateResultPage ที่รวม
 import 'constants.dart'; // นำเข้า AppConstants
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-// import 'intro_page.dart'; // ไม่จำเป็นต้องใช้ intro_page โดยตรงในนี้แล้ว
+// import 'package:http/http.dart' as http; // ไม่จำเป็นต้องใช้ในหน้านี้โดยตรง
+// import 'dart:convert'; // ไม่จำเป็นต้องใช้ในหน้านี้โดยตรง
 
 class RouteSelectionPage extends StatefulWidget {
   final String username;
@@ -37,14 +36,6 @@ class _RouteSelectionPageState extends State<RouteSelectionPage> {
     {'id': 2, 'name': 'เส้นทางที่ 2', 'isUnlocked': true, 'gateX': 0.0, 'chapterDescription': 'บททดสอบเกี่ยวกับความเข้าใจเกี่ยวกับบุหรี่ไฟฟ้า'},
     {'id': 3, 'name': 'เส้นทางที่ 3', 'isUnlocked': true, 'gateX': 0.6, 'chapterDescription': 'บททดสอบเกี่ยวกับการความสามารถในการสื่อสารและประเมินข้อมูล'},
   ];
-
-  @override
-  void initState() {
-    super.initState();
-    // Logic การปลดล็อคถูกจัดการที่ WelcomePage แล้ว
-    // หาก currentChapter เป็น 6 หมายถึงจบบทเรียนปัจจุบัน ผู้ใช้สามารถเลือกเส้นทางใหม่ได้
-    // ถ้าเป็น 1,1 ก็หมายถึงเริ่มใหม่
-  }
 
   // ฟังก์ชันสำหรับเคลื่อนย้ายตัวละครไปยังประตูและนำทาง
   void moveToGate(int selectedRouteId, double gateX) async {
@@ -107,14 +98,14 @@ class _RouteSelectionPageState extends State<RouteSelectionPage> {
                 children: routes.map((route) {
                   // ตอนนี้ทุกเส้นทางจะปลดล็อคเสมอในหน้านี้
                   // เพราะหน้านี้ถูกเรียกเมื่อผู้ใช้ "สามารถ" เลือกเส้นทางได้
-                  bool isLocked = !route['isUnlocked'];
+                  bool isLocked = !route['isUnlocked']; // ควรจะเป็น false เสมอในหน้านี้
 
                   String buttonText = 'เริ่ม: ${route['name']}';
 
                   return Column(
                     children: [
                       ElevatedButton(
-                        onPressed: isLocked
+                        onPressed: isLocked // จะไม่ถูก disabled แล้ว
                             ? null
                             : () => moveToGate(route['id'], route['gateX']),
                         child: Text(buttonText, textAlign: TextAlign.center,),

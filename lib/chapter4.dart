@@ -49,7 +49,7 @@ class _Chapter4PageState extends State<Chapter4Page> {
   List<String> userAnswers = [];
 
   int score = 0; // คะแนนของผู้ใช้
-  int questionCount = 0; // ตัวแปรสำหรับนับจำนวนครั้งที่ AI ตอบกลับ
+  // int questionCount = 0; // ตัวแปรสำหรับนับจำนวนครั้งที่ AI ตอบกลับ - ไม่จำเป็นต้องใช้สำหรับปุ่มทดสอบ
 
   final TextEditingController _chatController = TextEditingController();
   final List<ChatMessage> _chatMessages = [];
@@ -62,7 +62,7 @@ class _Chapter4PageState extends State<Chapter4Page> {
   }
 
   // ฟังก์ชันสำหรับคำนวณคะแนนแบบทดสอบและแสดงผล
-  Future<void> calculateScore() async {
+  Future<void> calculateAndSubmitScore() async {
     score = 0;
     for (int i = 0; i < answers.length; i++) {
       if (userAnswers[i] == answers[i]) {
@@ -70,41 +70,53 @@ class _Chapter4PageState extends State<Chapter4Page> {
       }
     }
 
-    // ส่งคะแนนไป backend พร้อม route_id
+    print('Chapter ${widget.chapter} (Route ${widget.routeId}) finished. Final score: $score');
+
+    // กำหนดค่าสำหรับส่งไป Backend
+    bool isFinishedChapter = (widget.chapter == 5); // ถ้าเป็นบทที่ 5 คือจบบทเรียนในเส้นทางนั้น
+    int nextChapterToSend = widget.chapter + 1; // บทถัดไป (อาจเป็น 6 ถ้าจบบท 5)
+    int nextRouteIDToSend = widget.routeId;     // เส้นทางยังคงเดิม
+
+    // ถ้าจบบทที่ 5 แล้ว (isFinishedChapter = true)
+    // ให้ nextChapterToSend เป็น 6 และ nextRouteIDToSend เป็น 1
+    if (isFinishedChapter) {
+      nextChapterToSend = 6;
+      nextRouteIDToSend = 1;
+    }
+
+    // ส่งคะแนนไป backend พร้อม route_id และข้อมูลความคืบหน้า
     try {
-      await http.post(
+      final response = await http.post(
         Uri.parse('${AppConstants.API_BASE_URL}/submit_score'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'username': widget.username,
-          'route_id': widget.routeId, // ส่ง route_id
-          'chapter_number': widget.chapter,
+          'chapter': widget.chapter,
           'score': score,
+          'route_id': widget.routeId, // ส่ง route_id
+          'is_finished': isFinishedChapter,
+          'next_chapter': nextChapterToSend,
+          'next_route_id': nextRouteIDToSend,
         }),
       );
-      print('Score submitted successfully!');
+      if (response.statusCode == 200) {
+        print('Score submitted successfully! Progress updated on Backend.');
+      } else {
+        print('Failed to submit score: ${response.statusCode} - ${response.body}');
+      }
     } catch (e) {
       print('Error submitting score: $e');
     }
 
-    // อัปเดต progress ไป backend พร้อม route_id (ซึ่งคือ routeId เดิม)
-    try {
-      await http.post(
-        Uri.parse('${AppConstants.API_BASE_URL}/update_progress'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'username': widget.username,
-          'current_chapter': widget.chapter + 1,
-          'current_route_id': widget.routeId, // ส่ง routeId ปัจจุบัน
-        }),
-      );
-      print('Progress updated successfully!');
-    } catch (e) {
-      print('Error updating progress: $e');
+    // ปิด dialog แบบทดสอบก่อน
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
     }
 
-    await showDialog(
+    if (!mounted) return;
+    showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
           title: const Text("คะแนนของคุณ"),
@@ -120,10 +132,10 @@ class _Chapter4PageState extends State<Chapter4Page> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => GateResultPage(
-                      chapterDescription: 'บททดสอบเกี่ยวกับการจัดการตนเอง',
+                      chapterDescription: 'บททดสอบเกี่ยวกับการจัดการตนเอง', // ควรปรับให้เหมาะสม
                       message: 'จบบทที่ ${widget.chapter} แล้ว 🎉',
-                      nextChapter: widget.chapter + 1,
-                      nextRouteId: widget.routeId, // ส่ง routeId ปัจจุบัน
+                      nextChapter: nextChapterToSend,
+                      nextRouteId: nextRouteIDToSend,
                       username: widget.username,
                     ),
                   ),
@@ -164,13 +176,13 @@ class _Chapter4PageState extends State<Chapter4Page> {
 
         setModalState(() {
           _chatMessages.add(ChatMessage(text: botReply, isUser: false));
-          questionCount++;
+          // questionCount++; // ไม่จำเป็นต้องใช้แล้วถ้าใช้ปุ่มเริ่มทดสอบโดยตรง
         });
 
-        if (questionCount >= 3) {
-          questionCount = 0; // รีเซ็ต
-          _showQuiz();
-        }
+        // if (questionCount >= 3) { // ไม่จำเป็นต้องใช้แล้วถ้าใช้ปุ่มเริ่มทดสอบโดยตรง
+        //   questionCount = 0; // รีเซ็ต
+        //   _showQuiz();
+        // }
       } else {
         setModalState(() {
           _chatMessages.add(
@@ -232,8 +244,8 @@ class _Chapter4PageState extends State<Chapter4Page> {
                 TextButton(
                   onPressed: () async {
                     if (userAnswers.every((answer) => answer.isNotEmpty)) {
-                      await calculateScore();
-                      if (mounted) Navigator.of(context).pop();
+                      await calculateAndSubmitScore(); // เรียกฟังก์ชันนี้
+                      // การปิด dialog หลังจากนี้จะถูกจัดการใน calculateAndSubmitScore
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -381,6 +393,18 @@ class _Chapter4PageState extends State<Chapter4Page> {
               const Text(
                 "สวัสดี! ฉันพร้อมจะช่วยให้คำปรึกษาแล้วนะ เปิดกล่องข้อความด้างล่างเพื่อคุยกับฉันเลย",
                 textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 30),
+              ElevatedButton(
+                onPressed: _showQuiz, // ปุ่มสำหรับเริ่มบททดสอบ
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueAccent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                  textStyle: const TextStyle(fontSize: 18),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Text('เริ่มบททดสอบ'),
               ),
             ],
           ),

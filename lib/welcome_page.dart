@@ -29,23 +29,11 @@ class WelcomePage extends StatelessWidget {
     Function() onPressedAction;
 
     // ตรวจสอบสถานะความคืบหน้า
-    if (currentChapter == 1 && currentRouteID == 1) {
-      // ผู้ใช้ใหม่ หรือเพิ่งเริ่มต้น/รีเซ็ตทั้งหมด
-      buttonText = 'เริ่มเกมใหม่';
-      onPressedAction = () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => CharacterSelectionPage(
-              username: username,
-              fullName: fullName,
-              currentChapter: currentChapter, // ส่งค่าเริ่มต้นไป
-              currentRouteID: currentRouteID, // ส่งค่าเริ่มต้นไป
-            ),
-          ),
-        );
-      };
-    } else if (currentChapter > 1 && currentChapter <= 5) {
+    // currentChapter == 1 && currentRouteID == 1: ผู้ใช้ใหม่ หรือเพิ่งรีเซ็ตทั้งหมด หรือจบบทที่ 5 เส้นทางใดเส้นทางหนึ่งแล้ว
+    // currentChapter > 1 && currentChapter <= 5: กำลังเล่นค้างอยู่
+    // currentChapter == 6: ใช้เป็นสถานะบอกว่าจบบทเรียนในเส้นทางนั้นๆ แล้ว (Backend ตั้งค่าเมื่อจบบท 5)
+
+    if (currentChapter > 1 && currentChapter <= 5) {
       // กำลังเล่นค้างอยู่
       buttonText = 'เล่นต่อ เส้นทางที่ $currentRouteID บทที่ $currentChapter';
       onPressedAction = () {
@@ -62,25 +50,9 @@ class WelcomePage extends StatelessWidget {
           ),
         );
       };
-    } else if (currentChapter == 6) {
-      // จบบทเรียนในเส้นทางล่าสุดแล้ว
-      buttonText = 'เลือกเส้นทางใหม่';
-      onPressedAction = () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => CharacterSelectionPage(
-              username: username,
-              fullName: fullName,
-              currentChapter: currentChapter, // ส่งค่า 6 ไป เพื่อให้ RouteSelectionPage รู้ว่าจบบทแล้ว
-              currentRouteID: currentRouteID, // ส่ง routeId ที่เพิ่งจบไป
-            ),
-          ),
-        );
-      };
     } else {
-      // กรณีอื่นๆ (เช่น currentChapter เป็นค่าที่ไม่คาดคิด)
-      buttonText = 'เริ่มเกม';
+      // ผู้ใช้ใหม่, เพิ่งรีเซ็ตทั้งหมด หรือจบบทที่ 5 เส้นทางใดเส้นทางหนึ่งแล้ว (currentChapter จะเป็น 6)
+      buttonText = 'เริ่มเกมใหม่ / เลือกเส้นทาง';
       onPressedAction = () {
         Navigator.push(
           context,
@@ -88,8 +60,8 @@ class WelcomePage extends StatelessWidget {
             builder: (context) => CharacterSelectionPage(
               username: username,
               fullName: fullName,
-              currentChapter: 1,
-              currentRouteID: 1,
+              currentChapter: currentChapter, // ส่งค่าปัจจุบันไป
+              currentRouteID: currentRouteID, // ส่งค่าปัจจุบันไป
             ),
           ),
         );

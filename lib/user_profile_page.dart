@@ -15,14 +15,13 @@ class UserProfilePage extends StatefulWidget {
 
 class _UserProfilePageState extends State<UserProfilePage> {
   String _fullName = '';
-  int _totalScore = 0;
   int _age = 0;
   String _schoolLevel = '';
   String _school = '';
   String _status = '';
   int _currentChapter = 1;
   int _currentRouteId = 1;
-  Map<String, dynamic> _chapterScores = {};
+  Map<int, RouteScoreSummaryDisplay> _routeSummaries = {}; // เปลี่ยนเป็น Map<int, RouteScoreSummaryDisplay>
   List<dynamic> _chapterAttempts = []; // สำหรับเก็บประวัติการทำแต่ละครั้ง
   bool _isLoading = true;
   String _errorMessage = '';
@@ -40,7 +39,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
     });
 
     try {
-      // ดึงข้อมูลผู้ใช้และคะแนนรวม/รายบท
+      // ดึงข้อมูลผู้ใช้และคะแนนรวม/รายบท (ซึ่งตอนนี้จะมาในรูป route_summaries)
       final userResponse = await http.get(
         Uri.parse('${AppConstants.API_BASE_URL}/get_score?username=${widget.username}'),
       );
@@ -54,27 +53,65 @@ class _UserProfilePageState extends State<UserProfilePage> {
         final userData = jsonDecode(userResponse.body);
         final attemptsData = jsonDecode(attemptsResponse.body);
 
+        print('UserProfilePage Raw Backend Data: $userData'); // Debug print for raw data
+
         setState(() {
           _fullName = userData['full_name'] ?? 'N/A';
-          _totalScore = userData['total_score'] ?? 0;
-          _age = userData['old'] ?? 0;
+          _age = userData['age'] ?? 0; // เปลี่ยนจาก 'old' เป็น 'age' ให้ตรงกับ backend
           _schoolLevel = userData['school_level'] ?? 'N/A';
           _school = userData['school'] ?? 'N/A';
           _currentChapter = userData['current_chapter'] ?? 1;
           _currentRouteId = userData['current_route_id'] ?? 1;
-          _chapterScores = Map<String, dynamic>.from(userData['chapter_score'] ?? {});
+
+          // Parse route_summaries
+          _routeSummaries = {}; // Clear previous data
+          if (userData['route_summaries'] != null) {
+            final Map<String, dynamic> rawRouteSummaries =
+                Map<String, dynamic>.from(userData['route_summaries']);
+            print('UserProfilePage Raw Route Summaries: $rawRouteSummaries'); // Debug print
+
+            rawRouteSummaries.forEach((key, value) {
+              final int? routeId = int.tryParse(key);
+              if (routeId != null && value is Map<String, dynamic>) {
+                final int totalScore = value['total_score'] ?? 0;
+                final Map<String, int> chapterScores = {};
+                if (value['chapter_scores'] != null) {
+                  (value['chapter_scores'] as Map<String, dynamic>).forEach((chapKey, chapValue) {
+                    // Filter chapter numbers to be between 1 and 5 (inclusive)
+                    if (int.tryParse(chapKey) != null &&
+                        int.parse(chapKey) >= 1 && int.parse(chapKey) <= 5) {
+                      chapterScores[chapKey] = chapValue as int;
+                    }
+                  });
+                }
+                _routeSummaries[routeId] = RouteScoreSummaryDisplay(
+                  totalScore: totalScore,
+                  chapterScores: chapterScores,
+                );
+              }
+            });
+            print('UserProfilePage Parsed Route Summaries: $_routeSummaries'); // Debug print
+          } else {
+            print('UserProfilePage route_summaries is null or empty.');
+          }
+
           _chapterAttempts = attemptsData['attempts'] ?? [];
 
-          if (_schoolLevel == 'Teacher') { // Backend ส่ง 'Teacher'/'Student' มา
+          // การกำหนดสถานะจาก school_level (Backend ควรส่ง 'Teacher' หรือ 'Student' มา)
+          // ใช้ userData['status'] แทน userData['school_level'] เพื่อความถูกต้อง
+          if (userData['status'] == 'Teacher') {
             _status = 'ครู';
-          } else if (_schoolLevel == 'Student') {
-            _status = 'นักเรียน ชั้น $_schoolLevel จาก $_school';
+          } else if (userData['status'] == 'Student') {
+            _status = 'นักเรียน (ชั้น ${_schoolLevel} จาก ${_school})';
           } else {
-            _status = 'อื่นๆ: $_schoolLevel';
+            _status = userData['status'] ?? 'N/A'; // ค่าอื่นๆ หรือ N/A
           }
         });
       } else {
-        _errorMessage = 'ไม่สามารถดึงข้อมูลผู้ใช้ได้: ${jsonDecode(userResponse.body)['message']} หรือ ประวัติการทำ: ${jsonDecode(attemptsResponse.body)['message']}';
+        _errorMessage = 'ไม่สามารถดึงข้อมูลผู้ใช้ได้: ${jsonDecode(userResponse.body)['message'] ?? 'Unknown error'}';
+        if (attemptsResponse.statusCode != 200) {
+          _errorMessage += ' หรือ ประวัติการทำ: ${jsonDecode(attemptsResponse.body)['message'] ?? 'Unknown error'}';
+        }
       }
     } catch (e) {
       _errorMessage = 'เกิดข้อผิดพลาดในการเชื่อมต่อ: $e';
@@ -91,10 +128,14 @@ class _UserProfilePageState extends State<UserProfilePage> {
       _errorMessage = '';
     });
     try {
+      print('Resetting scores for username: ${widget.username}');
+      final requestBody = jsonEncode({'username': widget.username});
+      print('Reset score request body: $requestBody');
+
       final response = await http.post(
         Uri.parse('${AppConstants.API_BASE_URL}/reset_score'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'username': widget.username}),
+        body: requestBody,
       );
 
       if (response.statusCode == 200) {
@@ -147,6 +188,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    // Calculate overall total score from all routes
+    int overallTotalScore = _routeSummaries.values.fold(0, (sum, summary) => sum + summary.totalScore);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('โปรไฟล์ผู้ใช้'),
@@ -191,10 +235,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
                         _buildInfoRow("สถานะ:", _status),
                         _buildInfoRow("บทปัจจุบัน:", 'บทที่ $_currentChapter (เส้นทางที่ $_currentRouteId)'),
                         const SizedBox(height: 20),
-                        Divider(),
+                        const Divider(),
                         const SizedBox(height: 20),
                         Text(
-                          "คะแนนรวม: $_totalScore",
+                          "คะแนนรวมทั้งหมด: $overallTotalScore", // แสดงคะแนนรวมทั้งหมด
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -203,7 +247,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                         ),
                         const SizedBox(height: 20),
                         const Text(
-                          "คะแนนที่ดีที่สุดแต่ละบท:",
+                          "คะแนนแยกตามเส้นทาง:", // เปลี่ยนข้อความเป็น "คะแนนแยกตามเส้นทาง"
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -211,39 +255,56 @@ class _UserProfilePageState extends State<UserProfilePage> {
                           ),
                         ),
                         const SizedBox(height: 10),
-                        if (_chapterScores.isNotEmpty)
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.blue[100]!),
-                              borderRadius: BorderRadius.circular(10),
-                              color: Colors.blue[50],
-                            ),
-                            child: Column(
-                              children: _chapterScores.entries.map((entry) {
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 4.0),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        if (_routeSummaries.isNotEmpty)
+                          Column(
+                            children: _routeSummaries.entries.map((entry) {
+                              int routeId = entry.key;
+                              RouteScoreSummaryDisplay summary = entry.value;
+
+                              // Ensure chapter scores are displayed in a sorted order if needed
+                              final sortedChapterEntries = summary.chapterScores.entries.toList()
+                                ..sort((a, b) => int.parse(a.key).compareTo(int.parse(b.key)));
+
+                              return Card(
+                                margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 5),
+                                elevation: 4,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(15.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'บทที่ ${entry.key}:',
-                                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                                        'เส้นทางที่ $routeId: คะแนนรวม ${summary.totalScore} คะแนน',
+                                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurple),
                                       ),
-                                      Text(
-                                        '${entry.value} คะแนน',
-                                        style: const TextStyle(fontSize: 16),
-                                      ),
+                                      const SizedBox(height: 8),
+                                      const Text('คะแนนแต่ละบท:', style: TextStyle(fontWeight: FontWeight.w600)),
+                                      if (sortedChapterEntries.isNotEmpty)
+                                        ...sortedChapterEntries.map((chapEntry) {
+                                          return Padding(
+                                            padding: const EdgeInsets.only(left: 10, top: 2),
+                                            child: Text(
+                                              '  บทที่ ${chapEntry.key}: ${chapEntry.value} คะแนน',
+                                              style: const TextStyle(fontSize: 15),
+                                            ),
+                                          );
+                                        }).toList()
+                                      else
+                                        const Padding(
+                                          padding: EdgeInsets.only(left: 10, top: 2),
+                                          child: Text('  ยังไม่มีคะแนนสำหรับบทเรียนในเส้นทางนี้'),
+                                        ),
                                     ],
                                   ),
-                                );
-                              }).toList(),
-                            ),
+                                ),
+                              );
+                            }).toList(),
                           )
                         else
-                          const Text('ยังไม่มีคะแนนบทเรียน'),
+                          const Text('ยังไม่มีข้อมูลคะแนนสำหรับเส้นทางใดๆ'),
                         const SizedBox(height: 30),
-                        Divider(),
+                        const Divider(),
                         const SizedBox(height: 30),
                         const Text(
                           "ประวัติการทำแต่ละครั้ง:",
@@ -299,7 +360,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                         const SizedBox(height: 20),
                         ElevatedButton(
                           onPressed: () {
-                            Navigator.pop(context); // กลับไปยังหน้า WelcomePage
+                            Navigator.pop(context); // กลับไปยังหน้า WelcomePage (หรือ MainChapterPage)
                           },
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
@@ -313,5 +374,22 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   ),
       ),
     );
+  }
+}
+
+// Helper class เพื่อช่วยในการแสดงผล RouteScoreSummary
+// คลาสนี้ควรจะอยู่ที่นี่หรือในไฟล์ constants.dart ที่สามารถเข้าถึงได้
+class RouteScoreSummaryDisplay {
+  final int totalScore;
+  final Map<String, int> chapterScores;
+
+  RouteScoreSummaryDisplay({
+    required this.totalScore,
+    required this.chapterScores,
+  });
+
+  @override
+  String toString() {
+    return 'Total Score: $totalScore, Chapter Scores: $chapterScores';
   }
 }
