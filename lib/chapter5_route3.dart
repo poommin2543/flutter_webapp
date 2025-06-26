@@ -36,7 +36,7 @@ class _Chapter5Route3PageState extends State<Chapter5Route3Page> {
   ];
 
   final List<String> answers = ["การสร้างแรงบันดาลใจและเป็นแบบอย่างที่ดี"];
-  List<String> userAnswers = [];
+  late List<String> userAnswers; // Initialize userAnswers based on question length
   int score = 0;
 
   @override
@@ -55,6 +55,13 @@ class _Chapter5Route3PageState extends State<Chapter5Route3Page> {
     setState(() {
       _message = 'กำลังส่งความคิดเห็น...';
     });
+
+    if (_commentController.text.trim().isEmpty) {
+      setState(() {
+        _message = 'กรุณาพิมพ์ความคิดเห็นก่อนส่ง';
+      });
+      return;
+    }
 
     try {
       final response = await http.post(
@@ -96,27 +103,36 @@ class _Chapter5Route3PageState extends State<Chapter5Route3Page> {
       }
     }
 
+    bool isCurrentChapterQuizFinished = true; // สำหรับบทนี้คือ True เสมอ
+    int chapterToAdvanceTo = widget.chapter;
+    int routeIdToAdvanceTo = widget.routeId;
+
+    if (isCurrentChapterQuizFinished) {
+      // เนื่องจากเป็นบทที่ 5 จึงเป็นบทสุดท้ายของเส้นทาง
+      chapterToAdvanceTo = 1; // กลับไปบทที่ 1 สำหรับเส้นทางถัดไป
+      routeIdToAdvanceTo = widget.routeId + 1; // เลื่อนไปเส้นทางถัดไป (ถ้ามี)
+    }
+
     try {
-      await http.post(
+      final response = await http.post(
         Uri.parse('${AppConstants.API_BASE_URL}/submit_score'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'username': widget.username,
-          'route_id': widget.routeId,
-          'chapter_number': widget.chapter,
+          'chapter': widget.chapter,
           'score': score,
+          'route_id': widget.routeId,
+          'is_finished': isCurrentChapterQuizFinished,
+          'next_chapter': chapterToAdvanceTo,
+          'next_route_id': routeIdToAdvanceTo,
         }),
       );
 
-      await http.post(
-        Uri.parse('${AppConstants.API_BASE_URL}/update_progress'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'username': widget.username,
-          'current_chapter': widget.chapter + 1,
-          'current_route_id': widget.routeId + 1, // ปลดล็อค route ถัดไป (ถ้ามี)
-        }),
-      );
+      if (response.statusCode == 200) {
+        print('Score submitted successfully! Progress updated on Backend.');
+      } else {
+        print('Failed to submit score: ${response.statusCode} - ${response.body}');
+      }
     } catch (e) {
       print('Error submitting score or updating progress: $e');
     }
@@ -192,7 +208,15 @@ class _Chapter5Route3PageState extends State<Chapter5Route3Page> {
               actions: [
                 TextButton(
                   onPressed: () {
-                    _calculateAndSubmitScore(dialogContext);
+                    if (userAnswers.every((answer) => answer.isNotEmpty)) {
+                      _calculateAndSubmitScore(dialogContext);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('กรุณาเลือกคำตอบก่อนส่ง'),
+                        ),
+                      );
+                    }
                   },
                   child: const Text('ส่งคำตอบ'),
                 ),

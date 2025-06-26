@@ -44,7 +44,7 @@ class _Chapter4Route3PageState extends State<Chapter4Route3Page> {
     ],
   ];
   List<String> answers = ["ค้นคว้าข้อมูลที่น่าเชื่อถือและตอบตามจริง"];
-  List<String> userAnswers = [];
+  late List<String> userAnswers; // Initialize userAnswers based on the number of questions
 
   int score = 0;
   int questionCount = 0;
@@ -59,7 +59,7 @@ class _Chapter4Route3PageState extends State<Chapter4Route3Page> {
     userAnswers = List<String>.filled(questions.length, "");
   }
 
-  Future<void> calculateScore() async {
+  Future<void> _calculateAndSubmitScore() async {
     score = 0;
     for (int i = 0; i < answers.length; i++) {
       if (userAnswers[i] == answers[i]) {
@@ -67,61 +67,56 @@ class _Chapter4Route3PageState extends State<Chapter4Route3Page> {
       }
     }
 
+    bool isCurrentChapterQuizFinished = true; // สำหรับบทนี้คือ True เสมอ
+    int chapterToAdvanceTo = widget.chapter;
+    int routeIdToAdvanceTo = widget.routeId;
+
+    if (isCurrentChapterQuizFinished) {
+      if (widget.chapter == 5) {
+        chapterToAdvanceTo = 1;
+        routeIdToAdvanceTo = widget.routeId + 1;
+      } else {
+        chapterToAdvanceTo = widget.chapter + 1;
+        routeIdToAdvanceTo = widget.routeId;
+      }
+    }
+
     try {
-      await http.post(
+      final response = await http.post(
         Uri.parse('${AppConstants.API_BASE_URL}/submit_score'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'username': widget.username,
-          'route_id': widget.routeId,
-          'chapter_number': widget.chapter,
+          'chapter': widget.chapter,
           'score': score,
+          'route_id': widget.routeId,
+          'is_finished': isCurrentChapterQuizFinished,
+          'next_chapter': chapterToAdvanceTo,
+          'next_route_id': routeIdToAdvanceTo,
         }),
       );
+
+      if (response.statusCode == 200) {
+        print('Score submitted successfully! Progress updated on Backend.');
+      } else {
+        print('Failed to submit score: ${response.statusCode} - ${response.body}');
+      }
     } catch (e) {
       print('Error submitting score: $e');
     }
 
-    await http.post(
-      Uri.parse('${AppConstants.API_BASE_URL}/update_progress'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'username': widget.username,
-        'current_chapter': widget.chapter + 1,
-        'current_route_id': widget.routeId,
-      }),
-    );
-
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("คะแนนของคุณ"),
-          content: Text(
-            "คุณได้ $score จาก ${answers.length} คะแนน",
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => GateResultPage(
-                      chapterDescription: 'บทสรุปและแนวทางการเป็นผู้นำรณรงค์',
-                      message: 'จบบทที่ ${widget.chapter} เส้นทางที่ ${widget.routeId} แล้ว 🎉',
-                      nextChapter: widget.chapter + 1,
-                      nextRouteId: widget.routeId,
-                      username: widget.username,
-                    ),
-                  ),
-                );
-              },
-              child: const Text("ตกลง"),
-            ),
-          ],
-        );
-      },
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => GateResultPage(
+          chapterDescription: 'กำลังเข้าสู่บทต่อไป...',
+          message: 'จบบทที่ ${widget.chapter} เส้นทางที่ ${widget.routeId} แล้ว 🎉',
+          nextChapter: chapterToAdvanceTo,
+          nextRouteId: routeIdToAdvanceTo,
+          username: widget.username,
+        ),
+      ),
     );
   }
 
@@ -137,8 +132,8 @@ class _Chapter4Route3PageState extends State<Chapter4Route3Page> {
 
     try {
       final url = Uri.parse(
-        // 'https://n8nmoss.roverautonomous.com/webhook/1054bc91-ee04-46fd-94a8-4b2055e6087f',
         'http://localhost:5678/webhook/abc0daf3-a0e9-4e92-9f6e-9000a8980e69',
+        // 'https://n8nmoss.roverautonomous.com/webhook/1054bc91-ee04-46fd-94a8-4b2055e6087f',
       );
       final response = await http.post(
         url,
@@ -157,6 +152,7 @@ class _Chapter4Route3PageState extends State<Chapter4Route3Page> {
 
         if (questionCount >= 3) {
           questionCount = 0;
+          if (Navigator.canPop(context)) Navigator.pop(context);
           _showQuiz();
         }
       } else {
@@ -219,8 +215,8 @@ class _Chapter4Route3PageState extends State<Chapter4Route3Page> {
                 TextButton(
                   onPressed: () async {
                     if (userAnswers.every((answer) => answer.isNotEmpty)) {
-                      await calculateScore();
-                      if (mounted) Navigator.of(context).pop();
+                      Navigator.of(context).pop();
+                      await _calculateAndSubmitScore();
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(

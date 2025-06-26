@@ -36,42 +36,32 @@ class _Chapter3PageState extends State<Chapter3Page> {
   )..preload = 'auto';
 
   final List<String> videoIds = [
-    'AvcAVT_XQA0',
-    'OBnA5HF6kvk',
-    '3xzXJboz1E0',
-    'WwSfLUtrx_Y', // วิดีโอซ้ำในโจทย์เดิม อาจจะแทนด้วยรูปภาพ
-    'WwSfLUtrx_Y', // วิดีโอซ้ำในโจทย์เดิม อาจจะแทนด้วยรูปภาพ
+    'gCahggGt7ao', // ตรวจสอบ ID วิดีโอให้ถูกต้อง
+    // 'dfofaZaJ3Rc',
+    // 'OBnA5HF6kvk',
+    // '_8XW_BgiD_Q',
+    // '3xzXJboz1E0',
   ];
   final List<String> questions = [
-    'พฤติกรรมของเยาวชนที่หันเข้าหาบุหรี่ไฟฟ้าคืออะไร?',
-    'สิ่งที่น่ากังวลในวัยเด็กและเยาวชนจากการสูบบุหรี่ไฟฟ้าคืออะไร?',
-    'ข้อเท็จจริงที่ว่าบุหรี่ไฟฟ้าเลิกสูบง่ายกว่าบุหรี่มวนจริงหรือไม่?',
-    'กลิ่นหอมจากบุหรี่ไฟฟ้าไม่ส่งผลอันตรายต่อร่างกาย?',
-    'โรคที่มักเกิดจากบุหรี่ไฟฟ้าได้แก่?',
+    'ทำไมการตั้งเป้าหมายที่ชัดเจนจึงสำคัญในการเลิกบุหรี่ไฟฟ้า?',
+    // 'สิ่งใดที่สามารถช่วยลดความอยากนิโคตินได้?',
+    // 'หากคุณรู้สึกอยากกลับไปสูบบุหรี่ไฟฟ้า ควรทำอย่างไร?',
+    // 'การสนับสนุนจากเพื่อนและครอบครัวมีผลต่อการเลิกบุหรี่ไฟฟ้าอย่างไร?',
+    // 'ข้อใดคือประโยชน์ระยะยาวของการเลิกบุหรี่ไฟฟ้า?',
   ];
   final List<List<String>> options = [
-    ['อยากรู้ อยากลอง', 'ไม่สนใจคำเตือน', 'ขาดความรู้', 'ถูกทุกข้อ'],
-    [
-      'สมองสูญเสียการพัฒนา',
-      'ช่วยให้หายใจโล่ง',
-      'ลดความเครียดได้',
-      'ใช้แล้วรู้สึกว่าเท่และเป็นที่ยอมรับ',
-    ],
-    ['ไม่จริง ', 'จริง', 'อาจจะใช่', 'ไม่มีข้อมูลที่ชัดเจน'],
-    [
-      'จริงทั้งหมด',
-      'จริง ขึ้นอยู่กับกลิ่นและรสชาติ',
-      'ไม่จริง ขึ้นอยู่กับกลิ่นและรสชาติ',
-      'ไม่จริงทั้งหมด',
-    ],
-    ['POV', 'CANCER', 'EVALI', 'COVID'],
+    ['เพื่อให้มีแรงจูงใจ', 'ไม่มีความสำคัญ', 'ทำให้เครียด', 'ทำให้ต้องพยายามมากขึ้น'],
+    // ['ดื่มกาแฟ', 'ออกกำลังกาย', 'นอนหลับเยอะๆ', 'รับประทานอาหารรสจัด'],
+    // ['ซื้อมาสูบแก้เครียด', 'ปรึกษาผู้เชี่ยวชาญ', 'ไม่สนใจ', 'เก็บไว้คนเดียว'],
+    // ['ไม่มีผลเลย', 'ทำให้รู้สึกกดดัน', 'ช่วยให้มีกำลังใจและทำได้สำเร็จมากขึ้น', 'ทำให้รู้สึกอึดอัด'],
+    // ['ประหยัดเงิน', 'สุขภาพดีขึ้น', 'ความสัมพันธ์กับคนรอบข้างดีขึ้น', 'ถูกทุกข้อ'],
   ];
   final List<String> answers = [
-    'ถูกทุกข้อ',
-    'สมองสูญเสียการพัฒนา',
-    'ไม่จริง', // แก้ไขตามคำตอบที่ถูกต้องใน backend
-    'ไม่จริงทั้งหมด',
-    'EVALI',
+    'เพื่อให้มีแรงจูงใจ',
+    // 'ออกกำลังกาย',
+    // 'ปรึกษาผู้เชี่ยวชาญ',
+    // 'ช่วยให้มีกำลังใจและทำได้สำเร็จมากขึ้น',
+    // 'ถูกทุกข้อ',
   ];
 
   int currentIndex = 0;
@@ -101,9 +91,7 @@ class _Chapter3PageState extends State<Chapter3Page> {
   }
 
   void _loadVideoAtIndex(int idx) {
-    if (idx < videoIds.length && idx < 3) { // สำหรับวิดีโอ 3 ตัวแรก
-      _controller.loadVideoById(videoId: videoIds[idx]);
-    }
+    _controller.loadVideoById(videoId: videoIds[idx]);
     setState(() {
       answered = false;
       userAnswers[idx] = '';
@@ -112,6 +100,9 @@ class _Chapter3PageState extends State<Chapter3Page> {
   }
 
   Future<void> _submitAnswer() async {
+    // ป้องกันการส่งคำตอบซ้ำ
+    if (answered) return;
+
     isCorrect = userAnswers[currentIndex] == answers[currentIndex];
     answered = true;
     characterImage = isCorrect
@@ -131,60 +122,68 @@ class _Chapter3PageState extends State<Chapter3Page> {
     setState(() {});
 
     await Future.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
 
     if (isCorrect) {
       totalScore++;
     }
 
+    // ตรวจสอบว่าคำถามทั้งหมดในบทเรียนปัจจุบันถูกตอบแล้วหรือไม่
+    bool isCurrentChapterQuizFinished = (currentIndex + 1 >= videoIds.length);
+    int chapterToAdvanceTo = widget.chapter;
+    int routeIdToAdvanceTo = widget.routeId;
+
+    if (isCurrentChapterQuizFinished) {
+      // หากคำถามทั้งหมดในบทเรียนปัจจุบันถูกตอบแล้ว
+      // สมมติว่ามี 5 บทต่อหนึ่งเส้นทาง (บทที่ 1 ถึง 5)
+      if (widget.chapter == 5) {
+        // หากเป็นบทที่ 5 (บทสุดท้ายของเส้นทาง) ให้กลับไปบทที่ 1 และเลื่อนไปเส้นทางถัดไป
+        chapterToAdvanceTo = 1; // กลับไปบทที่ 1 สำหรับเส้นทางถัดไป
+        routeIdToAdvanceTo = widget.routeId + 1; // เลื่อนไปเส้นทางถัดไป
+      } else {
+        // หากไม่ใช่บทที่ 5 ให้เลื่อนไปบทถัดไปในเส้นทางเดิม
+        chapterToAdvanceTo = widget.chapter + 1;
+        routeIdToAdvanceTo = widget.routeId;
+      }
+    }
+
+    // ส่งคะแนนและสถานะความคืบหน้าไปยัง Backend
+    try {
+      final response = await http.post(
+        Uri.parse('${AppConstants.API_BASE_URL}/submit_score'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'username': widget.username,
+          'chapter': widget.chapter,
+          'score': totalScore,
+          'route_id': widget.routeId,
+          'is_finished': isCurrentChapterQuizFinished,
+          'next_chapter': chapterToAdvanceTo,
+          'next_route_id': routeIdToAdvanceTo,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print('Score submitted successfully! Progress updated on Backend.');
+      } else {
+        print('Failed to submit score: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      print('Error submitting score: $e');
+    }
+
     if (currentIndex + 1 < videoIds.length) {
-      currentIndex++;
-      _loadVideoAtIndex(currentIndex);
+      setState(() {
+        currentIndex++;
+        _loadVideoAtIndex(currentIndex);
+      });
     } else {
-      // เมื่อจบบทเรียน
       print('Chapter ${widget.chapter} (Route ${widget.routeId}) finished. Final score: $totalScore');
-
-      // กำหนดค่าสำหรับส่งไป Backend
-      bool isFinishedChapter = (widget.chapter == 5); // ถ้าเป็นบทที่ 5 คือจบบทเรียนในเส้นทางนั้น
-      int nextChapterToSend = widget.chapter + 1; // บทถัดไป (อาจเป็น 6 ถ้าจบบท 5)
-      int nextRouteIDToSend = widget.routeId;     // เส้นทางยังคงเดิม
-
-      // ถ้าจบบทที่ 5 แล้ว (isFinishedChapter = true)
-      // ให้ nextChapterToSend เป็น 6 และ nextRouteIDToSend เป็น 1
-      if (isFinishedChapter) {
-        nextChapterToSend = 6;
-        nextRouteIDToSend = 1;
-      }
-
-      try {
-        final response = await http.post(
-          Uri.parse('${AppConstants.API_BASE_URL}/submit_score'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            'username': widget.username,
-            'chapter': widget.chapter,
-            'score': totalScore,
-            'route_id': widget.routeId,
-            'is_finished': isFinishedChapter,
-            'next_chapter': nextChapterToSend,
-            'next_route_id': nextRouteIDToSend,
-          }),
-        );
-
-        if (response.statusCode == 200) {
-          print('Score submitted successfully! Progress updated on Backend.');
-        } else {
-          print('Failed to submit score: ${response.statusCode} - ${response.body}');
-        }
-      } catch (e) {
-        print('Error submitting score: $e');
-      }
 
       if (!mounted) return;
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (_) => AlertDialog(
+        builder: (context) => AlertDialog(
           title: const Text("คะแนนของคุณ"),
           content: Text("คุณได้ $totalScore จาก ${answers.length} ข้อ"),
           actions: [
@@ -194,17 +193,17 @@ class _Chapter3PageState extends State<Chapter3Page> {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => GateResultPage(
-                      chapterDescription: 'บททดสอบเกี่ยวกับการตัดสินใจ',
-                      message: 'จบบทที่ ${widget.chapter} แล้ว 🎉',
-                      nextChapter: nextChapterToSend,
-                      nextRouteId: nextRouteIDToSend,
+                    builder: (context) => GateResultPage(
                       username: widget.username,
+                      nextChapter: chapterToAdvanceTo,
+                      nextRouteId: routeIdToAdvanceTo,
+                      message: 'จบบทที่ ${widget.chapter} แล้ว 🎉',
+                      chapterDescription: 'กำลังเข้าสู่บทต่อไป...',
                     ),
                   ),
                 );
               },
-              child: const Text('OK'),
+              child: const Text('ไปต่อ'),
             ),
           ],
         ),
@@ -236,11 +235,7 @@ class _Chapter3PageState extends State<Chapter3Page> {
             SizedBox(
               width: MediaQuery.of(context).size.width * 0.9,
               height: 400,
-              child: currentIndex == 3
-                  ? Image.asset('assets/images/Q34.jpg', fit: BoxFit.contain)
-                  : currentIndex == 4
-                      ? Image.asset('assets/images/Q35.jpg', fit: BoxFit.contain)
-                      : YoutubePlayer(controller: _controller),
+              child: YoutubePlayer(controller: _controller),
             ),
             const SizedBox(height: 20),
             Text(
@@ -258,10 +253,9 @@ class _Chapter3PageState extends State<Chapter3Page> {
                   onChanged: answered
                       ? null
                       : (val) =>
-                            setState(() => userAnswers[currentIndex] = val!),
-                ),
+                            setState(() => userAnswers[currentIndex] = val!)),
               ),
-            ).toList(), // เพิ่ม .toList()
+            ).toList(),
             if (answered) const SizedBox(height: 10),
             if (answered)
               Text(

@@ -35,7 +35,7 @@ class _Chapter5PageState extends State<Chapter5Page> {
   ];
 
   final List<String> answers = ["ใช่ ทุกประการ"];
-  List<String> userAnswers = [];
+  late List<String> userAnswers; // Initialize userAnswers based on question length
   int score = 0;
 
   @override
@@ -55,6 +55,13 @@ class _Chapter5PageState extends State<Chapter5Page> {
       _message = 'กำลังส่งความคิดเห็น...';
     });
 
+    if (_commentController.text.trim().isEmpty) {
+      setState(() {
+        _message = 'กรุณาพิมพ์ความคิดเห็นก่อนส่ง';
+      });
+      return;
+    }
+
     try {
       final response = await http.post(
         Uri.parse('${AppConstants.API_BASE_URL}/add_comment'),
@@ -72,18 +79,18 @@ class _Chapter5PageState extends State<Chapter5Page> {
           _message = 'ความคิดเห็นถูกส่งสำเร็จ!';
         });
         _commentController.clear();
-        _showQuizDialog();
+        _showQuizDialog(); // แสดงแบบทดสอบหลังจากส่งความคิดเห็นสำเร็จ
       } else {
         setState(() {
           _message = 'ข้อผิดพลาดในการส่งความคิดเห็น: ${data['message']}';
         });
-        _showQuizDialog();
+        _showQuizDialog(); // แสดงแบบทดสอบแม้ว่าการส่งความคิดเห็นจะล้มเหลว (สำหรับตอนนี้)
       }
     } catch (e) {
       setState(() {
         _message = 'เกิดข้อผิดพลาดในการเชื่อมต่อ: $e';
       });
-      _showQuizDialog();
+      _showQuizDialog(); // แสดงแบบทดสอบแม้ว่าจะเกิดข้อผิดพลาดในการเชื่อมต่อ
     }
   }
 
@@ -95,33 +102,35 @@ class _Chapter5PageState extends State<Chapter5Page> {
       }
     }
 
-    print('Chapter ${widget.chapter} (Route ${widget.routeId}) finished. Final score: $score');
+    // ตรวจสอบว่าแบบทดสอบในบทเรียนปัจจุบันเสร็จสมบูรณ์แล้วหรือไม่
+    bool isCurrentChapterQuizFinished = true; // สำหรับบทนี้คือ True เสมอ เพราะเป็นแบบทดสอบข้อเดียวหลังแชท
 
-    // กำหนดค่าสำหรับส่งไป Backend
-    bool isFinishedChapter = (widget.chapter == 5); // ถ้าเป็นบทที่ 5 คือจบบทเรียนในเส้นทางนั้น
-    int nextChapterToSend = widget.chapter + 1; // บทถัดไป (อาจเป็น 6 ถ้าจบบท 5)
-    int nextRouteIDToSend = widget.routeId;     // เส้นทางยังคงเดิม
+    int chapterToAdvanceTo = widget.chapter;
+    int routeIdToAdvanceTo = widget.routeId;
 
-    // ถ้าจบบทที่ 5 แล้ว (isFinishedChapter = true)
-    // ให้ nextChapterToSend เป็น 6 และ nextRouteIDToSend เป็น 1
-    if (isFinishedChapter) {
-      nextChapterToSend = 6;
-      nextRouteIDToSend = 1;
+    if (isCurrentChapterQuizFinished) {
+      // เนื่องจากเป็นบทที่ 5 จึงเป็นบทสุดท้ายของเส้นทาง
+      // สมมติว่ามี 5 บทต่อหนึ่งเส้นทาง (บทที่ 1 ถึง 5)
+      // หากมีเส้นทางเพิ่มเติม คุณจะต้องเลื่อน routeId
+      // ตอนนี้ หาก widget.routeId มีค่าสูงสุด (เช่น 3) คุณอาจจะไปที่หน้าสรุปผลสุดท้าย
+      // ที่นี่ เราจะถือว่าเป็นการจบบทเรียนหนึ่งเส้นทาง ดังนั้นบทถัดไปคือ 1 และเส้นทางถัดไปคือ widget.routeId + 1
+      chapterToAdvanceTo = 1; // กลับไปบทที่ 1 สำหรับเส้นทางถัดไป
+      routeIdToAdvanceTo = widget.routeId + 1; // เลื่อนไปเส้นทางถัดไป
     }
 
+    // ส่งคะแนนและสถานะความคืบหน้าไปยัง Backend
     try {
-      // ส่งคะแนนไป backend พร้อม route_id
       final response = await http.post(
         Uri.parse('${AppConstants.API_BASE_URL}/submit_score'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'username': widget.username,
-          'chapter': widget.chapter,
-          'score': score,
-          'route_id': widget.routeId, // ส่ง route_id
-          'is_finished': isFinishedChapter,
-          'next_chapter': nextChapterToSend,
-          'next_route_id': nextRouteIDToSend,
+          'chapter': widget.chapter, // บทที่เพิ่งทำแบบทดสอบเสร็จ
+          'score': score, // คะแนนที่ได้จากแบบทดสอบนี้
+          'route_id': widget.routeId,
+          'is_finished': isCurrentChapterQuizFinished, // True เพราะแบบทดสอบเสร็จสิ้น
+          'next_chapter': chapterToAdvanceTo, // บทที่ผู้ใช้ควรจะก้าวหน้าไป
+          'next_route_id': routeIdToAdvanceTo, // เส้นทางที่ผู้ใช้ควรจะก้าวหน้าไป
         }),
       );
 
@@ -134,24 +143,23 @@ class _Chapter5PageState extends State<Chapter5Page> {
       print('Error submitting score: $e');
     }
 
-    Navigator.pop(dialogContext); // ปิด AlertDialog ของแบบทดสอบ
+    // ปิดกล่องแบบทดสอบ
+    Navigator.pop(dialogContext);
 
+    // หลังจากส่งคะแนน ให้นำทางไปยัง SummaryPage
     if (!mounted) return;
     showDialog(
       context: context,
-      barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: const Text("คะแนนของคุณ"),
         content: Text("คุณทำคะแนนได้ $score จาก ${answers.length} คะแนน"),
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context); // ปิด dialog คะแนน
+              Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => SummaryPage(username: widget.username),
-                ),
+                MaterialPageRoute(builder: (context) => SummaryPage(username: widget.username)),
               );
             },
             child: const Text('ตกลง'),
@@ -169,7 +177,7 @@ class _Chapter5PageState extends State<Chapter5Page> {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setDialogState) {
             return AlertDialog(
-              title: Text('แบบทดสอบบทที่ ${widget.chapter}'),
+              title: Text('แบบทดสอบบทที่ ${widget.chapter} เส้นทางที่ ${widget.routeId}'),
               content: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -208,7 +216,16 @@ class _Chapter5PageState extends State<Chapter5Page> {
               actions: [
                 TextButton(
                   onPressed: () {
-                    _calculateAndSubmitScore(dialogContext);
+                    // ตรวจสอบว่ามีการเลือกคำตอบสำหรับแบบทดสอบแล้ว
+                    if (userAnswers.every((answer) => answer.isNotEmpty)) {
+                      _calculateAndSubmitScore(dialogContext);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('กรุณาเลือกคำตอบก่อนส่ง'),
+                        ),
+                      );
+                    }
                   },
                   child: const Text('ส่งคำตอบ'),
                 ),
@@ -238,13 +255,9 @@ class _Chapter5PageState extends State<Chapter5Page> {
                 ),
                 const SizedBox(height: 20),
                 const Text(
-                  "ฉันชื่อ ต้น เป็นนักเรียนมัธยมต้น อยู่ ม.2 ชอบเล่นกีฬา มีเพื่อนสนิทกลุ่มหนึ่งที่บางคนเริ่มสูบบุหรี่ไฟฟ้าเพราะดูเท่และกลิ่นหอม\n\n"
-                  "วันหนึ่งหลังเลิกเรียน ต้นนั่งอยู่ใต้ตึกกับกลุ่มเพื่อนสนิท 3–4 คน เพื่อนคนหนึ่งหยิบบุหรี่ไฟฟ้าขึ้นมาแล้วบอกว่า\n\n"
-                  "“ลองดูดิ กลิ่นมะม่วง หอมมาก ไม่อันตรายหรอก คนสูบกันเต็มเลย”\n\n"
-                  "ต้นลังเล... เขาไม่เคยลองมาก่อน แต่ก็ไม่อยากโดนเพื่อนมองว่า “เชย” หรือ “กลัว”\n\n"
-                  "เพื่อนยื่นบุหรี่ไฟฟ้ามาให้ต้น แล้วถามว่า: “จะลองไหม? ลองแค่ทีเดียวก็ได้”",
+                  "คุณได้เรียนรู้มากมายเกี่ยวกับการจัดการตนเองและบุหรี่ไฟฟ้าแล้ว มาสรุปสิ่งที่คุณได้เรียนรู้และแบ่งปันความคิดเห็นกันเถอะ",
                   style: TextStyle(
-                    fontSize: 20, // ปรับขนาดฟอนต์ให้เล็กลงหน่อย
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.indigo,
                   ),
@@ -255,7 +268,7 @@ class _Chapter5PageState extends State<Chapter5Page> {
                   controller: _commentController,
                   maxLines: 5,
                   decoration: InputDecoration(
-                    hintText: 'คำแนะนำของคุณๆ คือ',
+                    hintText: 'คุณเรียนรู้อะไรจากการเดินทางในเส้นทางนี้บ้าง?',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),

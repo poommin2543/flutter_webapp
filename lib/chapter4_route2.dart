@@ -44,10 +44,10 @@ class _Chapter4Route2PageState extends State<Chapter4Route2Page> {
     ],
   ];
   List<String> answers = ["บอกว่าไม่อยากลองเพราะสุขภาพสำคัญ"];
-  List<String> userAnswers = [];
+  late List<String> userAnswers; // Initialize userAnswers based on the number of questions
 
   int score = 0;
-  int questionCount = 0;
+  int questionCount = 0; // Counter for chat messages to trigger quiz
 
   final TextEditingController _chatController = TextEditingController();
   final List<ChatMessage> _chatMessages = [];
@@ -59,69 +59,71 @@ class _Chapter4Route2PageState extends State<Chapter4Route2Page> {
     userAnswers = List<String>.filled(questions.length, "");
   }
 
-  Future<void> calculateScore() async {
-    score = 0;
+  Future<void> _calculateAndSubmitScore() async {
+    score = 0; // รีเซ็ตคะแนนสำหรับแบบทดสอบเฉพาะนี้
     for (int i = 0; i < answers.length; i++) {
       if (userAnswers[i] == answers[i]) {
         score++;
       }
     }
 
+    // ตรวจสอบว่าแบบทดสอบในบทเรียนปัจจุบันเสร็จสมบูรณ์แล้วหรือไม่
+    bool isCurrentChapterQuizFinished = true; // สำหรับบทนี้คือ True เสมอ เพราะเป็นแบบทดสอบข้อเดียวหลังแชท
+
+    int chapterToAdvanceTo = widget.chapter;
+    int routeIdToAdvanceTo = widget.routeId;
+
+    if (isCurrentChapterQuizFinished) {
+      // สมมติว่ามี 5 บทต่อหนึ่งเส้นทาง (บทที่ 1 ถึง 5)
+      if (widget.chapter == 5) {
+        // หากเป็นบทที่ 5 (บทสุดท้ายของเส้นทาง) ให้กลับไปบทที่ 1 และเลื่อนไปเส้นทางถัดไป
+        chapterToAdvanceTo = 1; // กลับไปบทที่ 1 สำหรับเส้นทางถัดไป
+        routeIdToAdvanceTo = widget.routeId + 1; // เลื่อนไปเส้นทางถัดไป
+      } else {
+        // หากไม่ใช่บทที่ 5 ให้เลื่อนไปบทถัดไปในเส้นทางเดิม
+        chapterToAdvanceTo = widget.chapter + 1;
+        routeIdToAdvanceTo = widget.routeId;
+      }
+    }
+
+    // ส่งคะแนนและสถานะความคืบหน้าไปยัง Backend
     try {
-      await http.post(
+      final response = await http.post(
         Uri.parse('${AppConstants.API_BASE_URL}/submit_score'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'username': widget.username,
+          'chapter': widget.chapter, // บทที่เพิ่งทำแบบทดสอบเสร็จ
+          'score': score, // คะแนนที่ได้จากแบบทดสอบนี้
           'route_id': widget.routeId,
-          'chapter_number': widget.chapter,
-          'score': score,
+          'is_finished': isCurrentChapterQuizFinished, // True เพราะแบบทดสอบเสร็จสิ้น
+          'next_chapter': chapterToAdvanceTo, // บทที่ผู้ใช้ควรจะก้าวหน้าไป
+          'next_route_id': routeIdToAdvanceTo, // เส้นทางที่ผู้ใช้ควรจะก้าวหน้าไป
         }),
       );
+
+      if (response.statusCode == 200) {
+        print('Score submitted successfully! Progress updated on Backend.');
+      } else {
+        print('Failed to submit score: ${response.statusCode} - ${response.body}');
+      }
     } catch (e) {
       print('Error submitting score: $e');
     }
 
-    await http.post(
-      Uri.parse('${AppConstants.API_BASE_URL}/update_progress'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'username': widget.username,
-        'current_chapter': widget.chapter + 1,
-        'current_route_id': widget.routeId,
-      }),
-    );
-
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("คะแนนของคุณ"),
-          content: Text(
-            "คุณได้ $score จาก ${answers.length} คะแนน",
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => GateResultPage(
-                      chapterDescription: 'บททดสอบเกี่ยวกับการจัดการตนเองในสถานการณ์กดดัน',
-                      message: 'จบบทที่ ${widget.chapter} เส้นทางที่ ${widget.routeId} แล้ว 🎉',
-                      nextChapter: widget.chapter + 1,
-                      nextRouteId: widget.routeId,
-                      username: widget.username,
-                    ),
-                  ),
-                );
-              },
-              child: const Text("ตกลง"),
-            ),
-          ],
-        );
-      },
+    // หลังจากส่งคะแนน ให้นำทางไปยัง GateResultPage
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => GateResultPage(
+          username: widget.username,
+          nextChapter: chapterToAdvanceTo,
+          nextRouteId: routeIdToAdvanceTo,
+          message: 'จบบทที่ ${widget.chapter} แล้ว 🎉', // ปรับข้อความ
+          chapterDescription: 'กำลังเข้าสู่บทต่อไป...', // ปรับคำอธิบาย
+        ),
+      ),
     );
   }
 
@@ -137,8 +139,8 @@ class _Chapter4Route2PageState extends State<Chapter4Route2Page> {
 
     try {
       final url = Uri.parse(
-        // 'https://n8nmoss.roverautonomous.com/webhook/1054bc91-ee04-46fd-94a8-4b2055e6087f',
         'http://localhost:5678/webhook/abc0daf3-a0e9-4e92-9f6e-9000a8980e69',
+        // 'https://n8nmoss.roverautonomous.com/webhook/1054bc91-ee04-46fd-94a8-4b2055e6087f',
       );
       final response = await http.post(
         url,
@@ -157,6 +159,7 @@ class _Chapter4Route2PageState extends State<Chapter4Route2Page> {
 
         if (questionCount >= 3) {
           questionCount = 0;
+          if (Navigator.canPop(context)) Navigator.pop(context);
           _showQuiz();
         }
       } else {
@@ -219,8 +222,8 @@ class _Chapter4Route2PageState extends State<Chapter4Route2Page> {
                 TextButton(
                   onPressed: () async {
                     if (userAnswers.every((answer) => answer.isNotEmpty)) {
-                      await calculateScore();
-                      if (mounted) Navigator.of(context).pop();
+                      Navigator.of(context).pop(); // ปิดกล่องแบบทดสอบ
+                      await _calculateAndSubmitScore(); // คำนวณและส่งคะแนน
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
