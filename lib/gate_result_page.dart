@@ -1,10 +1,10 @@
 // lib/gate_result_page.dart (รวมทุก gate_result_page เข้าด้วยกัน)
 import 'package:flutter/material.dart';
-import 'chapter1.dart';
-import 'chapter2.dart';
-import 'chapter3.dart';
-import 'chapter4.dart';
-import 'chapter5.dart';
+// import 'chapter1.dart';
+// import 'chapter2.dart';
+// import 'chapter3.dart';
+// import 'chapter4.dart';
+// import 'chapter5.dart';
 import 'intro_page.dart'; // ใช้ IntroPage เป็นทางเข้าบทอื่นๆ
 import 'summary_page.dart'; // สำหรับตอนจบบทที่ 5
 import 'constants.dart'; // นำเข้า AppConstants

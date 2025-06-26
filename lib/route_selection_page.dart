@@ -4,7 +4,7 @@ import 'gate_result_page.dart'; // นำเข้า GateResultPage ที่�
 import 'constants.dart'; // นำเข้า AppConstants
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'intro_page.dart'; // สำหรับ Intro ของบทที่ 1 หรืออื่นๆ
+// import 'intro_page.dart'; // สำหรับ Intro ของบทที่ 1 หรืออื่นๆ
 
 class RouteSelectionPage extends StatefulWidget {
   final String username;
