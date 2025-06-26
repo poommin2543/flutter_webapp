@@ -4,20 +4,20 @@ import 'gate_result_page.dart'; // นำเข้า GateResultPage ที่�
 import 'constants.dart'; // นำเข้า AppConstants
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'intro_page.dart'; // สำหรับ Intro ของบทที่ 1 หรืออื่นๆ
+// import 'intro_page.dart'; // ไม่จำเป็นต้องใช้ intro_page โดยตรงในนี้แล้ว
 
 class RouteSelectionPage extends StatefulWidget {
   final String username;
   final String fullName;
-  final int currentChapter; // รับค่า currentChapter มาด้วย (จาก Backend)
-  final int currentRouteId; // รับค่า currentRouteId มาด้วย (จาก Backend)
+  final int currentChapter; // รับ currentChapter (จาก WelcomePage)
+  final int currentRouteID; // รับ currentRouteID (จาก WelcomePage)
   final String selectedCharacterName; // รับชื่อตัวละครที่เลือก
 
   RouteSelectionPage({
     required this.username,
     required this.fullName,
     required this.currentChapter,
-    required this.currentRouteId,
+    required this.currentRouteID,
     required this.selectedCharacterName,
   });
 
@@ -34,21 +34,16 @@ class _RouteSelectionPageState extends State<RouteSelectionPage> {
   // กำหนดเส้นทาง
   final List<Map<String, dynamic>> routes = [
     {'id': 1, 'name': 'เส้นทางที่ 1', 'isUnlocked': true, 'gateX': -0.6, 'chapterDescription': 'บททดสอบเกี่ยวกับข้อมูลเบื้องต้น'},
-    {'id': 2, 'name': 'เส้นทางที่ 2', 'isUnlocked': true, 'gateX': 0.0, 'chapterDescription': 'บททดสอบเกี่ยวกับความเข้าใจเกี่ยวกับบุหรี่ไฟฟ้า'}, // **ปรับเป็น true**
-    {'id': 3, 'name': 'เส้นทางที่ 3', 'isUnlocked': true, 'gateX': 0.6, 'chapterDescription': 'บททดสอบเกี่ยวกับการความสามารถในการสื่อสารและประเมินข้อมูล'}, // **ปรับเป็น true**
+    {'id': 2, 'name': 'เส้นทางที่ 2', 'isUnlocked': true, 'gateX': 0.0, 'chapterDescription': 'บททดสอบเกี่ยวกับความเข้าใจเกี่ยวกับบุหรี่ไฟฟ้า'},
+    {'id': 3, 'name': 'เส้นทางที่ 3', 'isUnlocked': true, 'gateX': 0.6, 'chapterDescription': 'บททดสอบเกี่ยวกับการความสามารถในการสื่อสารและประเมินข้อมูล'},
   ];
 
   @override
   void initState() {
     super.initState();
-    // ตอนนี้ไม่จำเป็นต้องใช้ลูปนี้แล้ว เนื่องจากเรา hardcode isUnlocked เป็น true
-    // หากต้องการให้การปลดล็อคยังขึ้นอยู่กับความคืบหน้าของผู้ใช้ใน Backend
-    // ให้คงโค้ดนี้ไว้และแก้ไข 'isUnlocked' ใน List 'routes' ให้เป็น false ตั้งต้น
-    // for (var route in routes) {
-    //   if (route['id'] <= widget.currentRouteId) {
-    //     route['isUnlocked'] = true;
-    //   }
-    // }
+    // Logic การปลดล็อคถูกจัดการที่ WelcomePage แล้ว
+    // หาก currentChapter เป็น 6 หมายถึงจบบทเรียนปัจจุบัน ผู้ใช้สามารถเลือกเส้นทางใหม่ได้
+    // ถ้าเป็น 1,1 ก็หมายถึงเริ่มใหม่
   }
 
   // ฟังก์ชันสำหรับเคลื่อนย้ายตัวละครไปยังประตูและนำทาง
@@ -62,47 +57,17 @@ class _RouteSelectionPageState extends State<RouteSelectionPage> {
 
     if (!mounted) return;
 
-    // ตรวจสอบว่าผู้ใช้เลือกเส้นทางปัจจุบันที่ทำค้างไว้หรือไม่
+    // เมื่อเลือกเส้นทางใหม่ จะเริ่มต้นบทที่ 1 เสมอ
     int chapterToStart = 1;
-    if (selectedRouteId == widget.currentRouteId) {
-      // ถ้าเลือกเส้นทางเดิมที่เคยทำค้างไว้ ให้ไปที่ chapter ที่ค้างไว้
-      chapterToStart = widget.currentChapter;
-    } else {
-      // ถ้าเลือกเส้นทางใหม่ ให้เริ่มต้นที่ chapter 1 ของเส้นทางนั้น
-      chapterToStart = 1;
-    }
 
-    // อัปเดต current_chapter และ current_route_id ใน backend
-    // ไม่ว่าจะเป็นการเล่นต่อ หรือเริ่มเส้นทางใหม่ ก็ต้องอัปเดต state ใน backend
-    try {
-      final response = await http.post(
-        Uri.parse('${AppConstants.API_BASE_URL}/update_progress'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'username': widget.username,
-          'current_chapter': chapterToStart,
-          'current_route_id': selectedRouteId,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        print('Route progress updated successfully!');
-      } else {
-        print('Failed to update route progress: ${response.body}');
-      }
-    } catch (e) {
-      print('Error updating route progress: $e');
-    }
-
-    // นำทางไปยัง GateResultPage โดยส่งข้อมูล routeId และ chapter ที่จะไปต่อ
-    // GateResultPage จะตัดสินใจว่าจะไปหน้า IntroPage หรือ ChapterPage ที่เหมาะสม
+    // นำทางไปยัง GateResultPage เพื่ออัปเดต Backend และนำทางต่อ
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (context) => GateResultPage(
           username: widget.username,
-          nextChapter: chapterToStart, // จะไปบทที่ถูกต้องตามความคืบหน้า
-          nextRouteId: selectedRouteId, // ส่ง routeId ที่เลือกไปให้ GateResultPage
+          nextChapter: chapterToStart, // จะไปบทที่ 1 ของเส้นทางใหม่
+          nextRouteId: selectedRouteId, // เส้นทางที่เลือก
           message: 'คุณเลือก${routes.firstWhere((r) => r['id'] == selectedRouteId)['name']}ได้แล้ว 🎉',
           chapterDescription: routes.firstWhere((r) => r['id'] == selectedRouteId)['chapterDescription'], // คำอธิบายสำหรับบทแรกของเส้นทาง
         ),
@@ -112,13 +77,6 @@ class _RouteSelectionPageState extends State<RouteSelectionPage> {
 
   @override
   Widget build(BuildContext context) {
-    // การวนลูปนี้อาจไม่จำเป็นแล้ว ถ้า routes ถูกกำหนดให้ isUnlocked: true ตั้งแต่แรก
-    // แต่เก็บไว้เพื่อการแสดงผล icon lock เผื่อมีการเปลี่ยนแปลง logic ในอนาคต
-    for (var route in routes) {
-      // route['isUnlocked'] = route['id'] <= widget.currentRouteId; // Old logic
-      // No change needed here if you want all routes unlocked by default in the list above.
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('เลือกประตูของคุณ'),
@@ -147,18 +105,11 @@ class _RouteSelectionPageState extends State<RouteSelectionPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: routes.map((route) {
-                  // หากเรา hardcode isUnlocked เป็น true แล้ว isLocked จะเป็น false เสมอ
+                  // ตอนนี้ทุกเส้นทางจะปลดล็อคเสมอในหน้านี้
+                  // เพราะหน้านี้ถูกเรียกเมื่อผู้ใช้ "สามารถ" เลือกเส้นทางได้
                   bool isLocked = !route['isUnlocked'];
-                  // กำหนดข้อความแสดงว่าเส้นทางนี้คือเส้นทางปัจจุบันที่ทำค้างไว้
-                  bool isCurrentRoute = route['id'] == widget.currentRouteId && widget.currentChapter <= 5;
-                  String buttonText = route['name'];
-                  if (isLocked) {
-                    buttonText = 'Locked'; // จะไม่เกิดขึ้นแล้วถ้า isUnlocked เป็น true
-                  } else if (isCurrentRoute) {
-                    buttonText = 'เล่นต่อ: ${route['name']} (บทที่ ${widget.currentChapter})';
-                  } else {
-                    buttonText = 'เริ่ม: ${route['name']}';
-                  }
+
+                  String buttonText = 'เริ่ม: ${route['name']}';
 
                   return Column(
                     children: [
@@ -166,10 +117,9 @@ class _RouteSelectionPageState extends State<RouteSelectionPage> {
                         onPressed: isLocked
                             ? null
                             : () => moveToGate(route['id'], route['gateX']),
-                        child: Text(buttonText),
+                        child: Text(buttonText, textAlign: TextAlign.center,),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              isLocked ? Colors.grey : (isCurrentRoute ? Colors.orange : Colors.blue),
+                          backgroundColor: Colors.blue, // สีเริ่มต้น
                           minimumSize: const Size(150, 40), // กำหนดขนาดขั้นต่ำ
                         ),
                       ),
@@ -178,7 +128,7 @@ class _RouteSelectionPageState extends State<RouteSelectionPage> {
                         alignment: Alignment.center,
                         children: [
                           Image.asset('assets/images/Gate.webp', height: 160),
-                          if (isLocked) // ถ้า isLocked เป็น false ก็จะไม่แสดง icon lock
+                          if (isLocked) // ถ้า isLocked เป็น false ก็จะไม่แสดง icon lock (ตอนนี้จะไม่แสดงแล้ว)
                             Icon(
                               Icons.lock,
                               size: 60,
@@ -186,9 +136,9 @@ class _RouteSelectionPageState extends State<RouteSelectionPage> {
                             ),
                         ],
                       ),
-                      if (isLocked)
+                      if (isLocked) // จะไม่แสดงแล้ว
                         const SizedBox(height: 5),
-                      if (isLocked)
+                      if (isLocked) // จะไม่แสดงแล้ว
                         const Text(
                           'Coming Soon',
                           style: TextStyle(

@@ -6,14 +6,14 @@ import 'chapter3.dart'; // Route 1, Chapter 3
 import 'chapter4.dart'; // Route 1, Chapter 4
 import 'chapter5.dart'; // Route 1, Chapter 5
 
-// Chapters for Route 2 - **เพิ่มส่วนนี้**
+// Chapters for Route 2
 import 'chapter1_route2.dart';
 import 'chapter2_route2.dart';
 import 'chapter3_route2.dart';
 import 'chapter4_route2.dart';
 import 'chapter5_route2.dart';
 
-// Chapters for Route 3 - **เพิ่มส่วนนี้**
+// Chapters for Route 3
 import 'chapter1_route3.dart';
 import 'chapter2_route3.dart';
 import 'chapter3_route3.dart';
@@ -25,6 +25,7 @@ import 'summary_page.dart'; // สำหรับตอนจบบทที่ 
 import 'constants.dart'; // นำเข้า AppConstants
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'welcome_page.dart'; // เพิ่ม: สำหรับกลับไปหน้า Welcome หลังจากจบบทที่ 5
 
 class GateResultPage extends StatefulWidget {
   final String username;
@@ -76,159 +77,23 @@ class _GateResultPageState extends State<GateResultPage> {
     }
 
     // หลังจากอัปเดต Backend แล้วค่อยนำทาง
-    Future.delayed(const Duration(seconds: 5), () {
+    Future.delayed(const Duration(seconds: 5), () async {
       if (!mounted) return; // ตรวจสอบว่า widget ยังอยู่บน tree ก่อนนำทาง
 
       Widget targetPage;
 
-      // Logic การนำทางไปยังบทต่อไป หรือหน้าสรุป
-      // **นี่คือส่วนที่เปลี่ยนไปมากที่สุด**
-      if (widget.nextChapter == 6) { // ถ้าเป็นบทที่ 6 (หมายถึงจบบทที่ 5 แล้ว) ให้ไปหน้า SummaryPage
+      // Logic การนำทางไปยังบทต่อไป หรือหน้าสรุป หรือ WelcomePage
+      if (widget.nextChapter == 6) { // ถ้าเป็นบทที่ 6 (หมายถึงจบบทที่ 5 แล้ว)
          targetPage = SummaryPage(username: widget.username);
+         // หลังจาก SummaryPage จบ ผู้ใช้จะกลับไปที่ WelcomePage และเห็นปุ่ม "เลือกเส้นทางใหม่"
       } else {
-        // เลือก IntroPage หรือ ChapterPage ที่ถูกต้องตาม routeId และ chapterNumber
-        switch (widget.nextRouteId) {
-          case 1: // Route 1
-            switch (widget.nextChapter) {
-              case 1:
-                targetPage = IntroPage(
-                  username: widget.username,
-                  currentRouteId: widget.nextRouteId,
-                  selectedCharacterName: 'ตัวละคร',
-                  targetChapter: 1, // ชี้ไปที่ IntroPage สำหรับ Chapter 1
-                );
-                break;
-              case 2:
-                targetPage = IntroPage(
-                  username: widget.username,
-                  currentRouteId: widget.nextRouteId,
-                  selectedCharacterName: 'ตัวละคร',
-                  targetChapter: 2, // ชี้ไปที่ IntroPage สำหรับ Chapter 2
-                );
-                break;
-              case 3:
-                targetPage = IntroPage(
-                  username: widget.username,
-                  currentRouteId: widget.nextRouteId,
-                  selectedCharacterName: 'ตัวละคร',
-                  targetChapter: 3, // ชี้ไปที่ IntroPage สำหรับ Chapter 3
-                );
-                break;
-              case 4:
-                targetPage = IntroPage(
-                  username: widget.username,
-                  currentRouteId: widget.nextRouteId,
-                  selectedCharacterName: 'ตัวละคร',
-                  targetChapter: 4, // ชี้ไปที่ IntroPage สำหรับ Chapter 4
-                );
-                break;
-              case 5:
-                targetPage = IntroPage(
-                  username: widget.username,
-                  currentRouteId: widget.nextRouteId,
-                  selectedCharacterName: 'ตัวละคร',
-                  targetChapter: 5, // ชี้ไปที่ IntroPage สำหรับ Chapter 5
-                );
-                break;
-              default:
-                targetPage = SummaryPage(username: widget.username); // Fallback
-            }
-            break;
-          case 2: // Route 2 - **เพิ่ม Logic นี้**
-            switch (widget.nextChapter) {
-              case 1:
-                targetPage = IntroPage( // ใช้ IntroPage ก่อนเข้าบท 1 ของ Route 2
-                  username: widget.username,
-                  currentRouteId: widget.nextRouteId,
-                  selectedCharacterName: 'ตัวละคร',
-                  targetChapter: 1, // ชี้ไปที่ IntroPage สำหรับ Chapter 1 (ของ Route 2)
-                );
-                break;
-              case 2:
-                targetPage = IntroPage( // ใช้ IntroPage ก่อนเข้าบท 2 ของ Route 2
-                  username: widget.username,
-                  currentRouteId: widget.nextRouteId,
-                  selectedCharacterName: 'ตัวละคร',
-                  targetChapter: 2, // ชี้ไปที่ IntroPage สำหรับ Chapter 2 (ของ Route 2)
-                );
-                break;
-              case 3:
-                targetPage = IntroPage(
-                  username: widget.username,
-                  currentRouteId: widget.nextRouteId,
-                  selectedCharacterName: 'ตัวละคร',
-                  targetChapter: 3,
-                );
-                break;
-              case 4:
-                targetPage = IntroPage(
-                  username: widget.username,
-                  currentRouteId: widget.nextRouteId,
-                  selectedCharacterName: 'ตัวละคร',
-                  targetChapter: 4,
-                );
-                break;
-              case 5:
-                targetPage = IntroPage(
-                  username: widget.username,
-                  currentRouteId: widget.nextRouteId,
-                  selectedCharacterName: 'ตัวละคร',
-                  targetChapter: 5,
-                );
-                break;
-              default:
-                targetPage = SummaryPage(username: widget.username); // Fallback
-            }
-            break;
-          case 3: // Route 3 - **เพิ่ม Logic นี้**
-            switch (widget.nextChapter) {
-              case 1:
-                targetPage = IntroPage( // ใช้ IntroPage ก่อนเข้าบท 1 ของ Route 3
-                  username: widget.username,
-                  currentRouteId: widget.nextRouteId,
-                  selectedCharacterName: 'ตัวละคร',
-                  targetChapter: 1,
-                );
-                break;
-              case 2:
-                targetPage = IntroPage( // ใช้ IntroPage ก่อนเข้าบท 2 ของ Route 3
-                  username: widget.username,
-                  currentRouteId: widget.nextRouteId,
-                  selectedCharacterName: 'ตัวละคร',
-                  targetChapter: 2,
-                );
-                break;
-              case 3:
-                targetPage = IntroPage(
-                  username: widget.username,
-                  currentRouteId: widget.nextRouteId,
-                  selectedCharacterName: 'ตัวละคร',
-                  targetChapter: 3,
-                );
-                break;
-              case 4:
-                targetPage = IntroPage(
-                  username: widget.username,
-                  currentRouteId: widget.nextRouteId,
-                  selectedCharacterName: 'ตัวละคร',
-                  targetChapter: 4,
-                );
-                break;
-              case 5:
-                targetPage = IntroPage(
-                  username: widget.username,
-                  currentRouteId: widget.nextRouteId,
-                  selectedCharacterName: 'ตัวละคร',
-                  targetChapter: 5,
-                );
-                break;
-              default:
-                targetPage = SummaryPage(username: widget.username); // Fallback
-            }
-            break;
-          default: // Fallback สำหรับ routeId ที่ไม่รู้จัก
-            targetPage = SummaryPage(username: widget.username);
-        }
+        // นำทางไปยัง IntroPage ก่อนเข้า Chapter จริง
+        targetPage = IntroPage(
+          username: widget.username,
+          currentRouteId: widget.nextRouteId,
+          selectedCharacterName: 'ตัวละคร', // หรือชื่อตัวละครที่แท้จริง
+          targetChapter: widget.nextChapter,
+        );
       }
 
       Navigator.pushReplacement(
@@ -257,7 +122,12 @@ class _GateResultPageState extends State<GateResultPage> {
             const SizedBox(height: 20),
             const CircularProgressIndicator(),
             const SizedBox(height: 10),
-            Text('กำลังเข้าสู่บทที่ ${widget.nextChapter} ...'),
+            // หาก nextChapter เป็น 6 ให้แสดงข้อความที่แตกต่าง
+            Text(
+              widget.nextChapter == 6
+                  ? 'กำลังเข้าสู่หน้าสรุปบทเรียน...'
+                  : 'กำลังเข้าสู่บทที่ ${widget.nextChapter} ...',
+            ),
             const SizedBox(height: 10),
             Text(widget.chapterDescription),
           ],

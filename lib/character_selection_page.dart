@@ -5,14 +5,14 @@ import 'route_selection_page.dart'; // นำเข้าหน้าเลื�
 class CharacterSelectionPage extends StatelessWidget {
   final String username;
   final String fullName;
-  final int currentChapter;
-  final int currentRouteId; // เพิ่ม: เพื่อส่งผ่านค่า current_route_id
+  final int currentChapter; // รับ currentChapter
+  final int currentRouteID; // รับ currentRouteID
 
   CharacterSelectionPage({
     required this.username,
     required this.fullName,
     required this.currentChapter,
-    required this.currentRouteId,
+    required this.currentRouteID,
   });
 
   @override
@@ -71,8 +71,8 @@ class CharacterSelectionPage extends StatelessWidget {
                             builder: (context) => RouteSelectionPage(
                               username: username,
                               fullName: fullName,
-                              currentChapter: currentChapter,
-                              currentRouteId: currentRouteId, // ส่งค่า route id
+                              currentChapter: currentChapter, // ส่ง currentChapter
+                              currentRouteID: currentRouteID, // ส่ง currentRouteID
                               selectedCharacterName: character['name']!, // ส่งชื่อตัวละครที่เลือก
                             ),
                           ),
@@ -112,7 +112,7 @@ class CharacterSelectionPage extends StatelessWidget {
                                       username: username,
                                       fullName: fullName,
                                       currentChapter: currentChapter,
-                                      currentRouteId: currentRouteId,
+                                      currentRouteID: currentRouteID,
                                       selectedCharacterName: character['name']!,
                                     ),
                                   ),

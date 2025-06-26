@@ -33,6 +33,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
   String _message = '';
 
+  // ฟังก์ชันสำหรับทำการ login
   Future<void> loginUser() async {
     setState(() {
       _isLoading = true;
@@ -52,22 +53,23 @@ class _LoginPageState extends State<LoginPage> {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         String fullName = responseData['full_name'];
-        int currentChapter = responseData['current_chapter'] ?? 1; // ดึง current_chapter
-        int currentRouteId = responseData['current_route_id'] ?? 1; // ดึง current_route_id
+        // **แก้ไขตรงนี้**: รับ current_chapter และ current_route_id โดยตรงจาก Backend
+        int currentChapter = responseData['current_chapter'] ?? 1; // Default to 1 if null
+        int currentRouteID = responseData['current_route_id'] ?? 1; // Default to 1 if null
 
         setState(() {
           _message = 'เข้าสู่ระบบสำเร็จ!';
         });
 
-        // นำทางไปยัง WelcomePage พร้อมส่งข้อมูลความคืบหน้า
+        // นำทางไปยัง WelcomePage พร้อมส่งข้อมูลความคืบหน้า (int)
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => WelcomePage(
               fullName: fullName,
               username: usernameController.text,
-              currentChapter: currentChapter, // ส่ง currentChapter ไป
-              currentRouteId: currentRouteId, // ส่ง currentRouteId ไป
+              currentChapter: currentChapter, // ส่ง currentChapter
+              currentRouteID: currentRouteID, // ส่ง currentRouteID
             ),
           ),
         );

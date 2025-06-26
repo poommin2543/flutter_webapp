@@ -2,8 +2,10 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'constants.dart'; // นำเข้า AppConstants
-import 'survey_page.dart'; // นำเข้า SurveyPage
+import 'constants.dart';
+import 'main.dart'; // สำหรับกลับไป LoginPage (อาจเปลี่ยนเป็น WelcomePage)
+import 'welcome_page.dart'; // เพิ่ม: เพื่อกลับไปหน้า WelcomePage
+import 'survey_page.dart'; // ตรวจสอบว่ามีบรรทัดนี้
 
 class SummaryPage extends StatefulWidget {
   final String username;
@@ -15,77 +17,190 @@ class SummaryPage extends StatefulWidget {
 }
 
 class _SummaryPageState extends State<SummaryPage> {
+  // State variables to hold user data
   String _fullName = '';
   int _totalScore = 0;
   int _age = 0;
   String _schoolLevel = '';
   String _school = '';
-  String _status = '';
-  Map<String, dynamic> _chapterScores = {};
-  List<dynamic> _chapterAttempts = []; // เพิ่มสำหรับเก็บประวัติการทำแต่ละครั้ง
+  String _status = ''; // เพื่อรวมข้อมูลสถานะ
+  Map<String, dynamic> _chapterScores = {}; // เพิ่มสำหรับเก็บคะแนนรายบท
   bool _isLoading = true;
   String _errorMessage = '';
+
+  // สำหรับเก็บ current_chapter และ current_route_id
+  int _currentChapter = 1;
+  int _currentRouteID = 1;
 
   @override
   void initState() {
     super.initState();
-    _fetchUserDataAndScores();
+    _fetchUserData();
   }
 
-  Future<void> _fetchUserDataAndScores() async {
+  // Function to fetch user data from the backend
+  Future<void> _fetchUserData() async {
     setState(() {
       _isLoading = true;
       _errorMessage = '';
     });
 
     try {
-      // ดึงข้อมูลผู้ใช้และคะแนนรวม/รายบท
-      final userResponse = await http.get(
-        Uri.parse('${AppConstants.API_BASE_URL}/get_score?username=${widget.username}'),
+      final response = await http.get(
+        Uri.parse(
+          '${AppConstants.API_BASE_URL}/get_score?username=${widget.username}',
+        ), // <-- ใช้ URL ของ Go backend ที่รันอยู่
       );
 
-      // ดึงประวัติการทำบทเรียน
-      final attemptsResponse = await http.get(
-        Uri.parse('${AppConstants.API_BASE_URL}/get_chapter_attempts?username=${widget.username}'),
-      );
-
-      if (userResponse.statusCode == 200 && attemptsResponse.statusCode == 200) {
-        final userData = jsonDecode(userResponse.body);
-        final attemptsData = jsonDecode(attemptsResponse.body);
-
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
         setState(() {
-          _fullName = userData['full_name'] ?? 'N/A';
-          _totalScore = userData['total_score'] ?? 0;
-          _age = userData['old'] ?? 0;
-          _schoolLevel = userData['school_level'] ?? 'N/A';
-          _school = userData['school'] ?? 'N/A';
-          _chapterScores = Map<String, dynamic>.from(userData['chapter_score'] ?? {});
-          _chapterAttempts = attemptsData['attempts'] ?? [];
-
-          // สร้างข้อความสถานะ
-          if (_schoolLevel == 'Teacher') { // Backend ส่ง 'Teacher'/'Student' มา
-            _status = 'ครู';
-          } else if (_schoolLevel == 'Student') {
-            _status = 'นักเรียน ชั้น $_schoolLevel จาก $_school';
-          } else {
-            _status = 'อื่นๆ: $_schoolLevel';
-          }
+          _fullName = data['full_name'] ?? 'N/A';
+          _totalScore = data['total_score'] ?? 0;
+          _age = data['old'] ?? 0;
+          _schoolLevel = data['school_level'] ?? 'N/A';
+          _school = data['school'] ?? 'N/A';
+          _status = data['status'] ?? 'N/A'; // ดึง status
+          _chapterScores = Map<String, dynamic>.from(
+              data['chapter_score'] ?? {}); // แปลงเป็น Map<String, dynamic>
+          _currentChapter = data['current_chapter'] ?? 1; // ดึง current_chapter
+          _currentRouteID = data['current_route_id'] ?? 1; // ดึง current_route_id
         });
       } else {
         setState(() {
-          _errorMessage = 'ไม่สามารถดึงข้อมูลผู้ใช้ได้: ${jsonDecode(userResponse.body)['message']} หรือ ประวัติการทำ: ${jsonDecode(attemptsResponse.body)['message']}';
+          _errorMessage =
+              'ไม่สามารถดึงข้อมูลผู้ใช้ได้: ${response.statusCode} - ${response.body}';
         });
       }
     } catch (e) {
       setState(() {
         _errorMessage = 'เกิดข้อผิดพลาดในการเชื่อมต่อ: $e';
       });
-      print('Error fetching user data and attempts: $e');
     } finally {
       setState(() {
         _isLoading = false;
       });
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('สรุปข้อมูลผู้ใช้'),
+        automaticallyImplyLeading: false, // ซ่อนปุ่มย้อนกลับ
+      ),
+      body: Center(
+        child: _isLoading
+            ? const CircularProgressIndicator()
+            : _errorMessage.isNotEmpty
+                ? Text(_errorMessage)
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'ข้อมูลโปรไฟล์และคะแนน',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blueAccent,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 20),
+                        _buildInfoRow('ชื่อ-นามสกุล:', _fullName),
+                        _buildInfoRow('Username:', widget.username),
+                        _buildInfoRow('อายุ:', _age.toString()),
+                        _buildInfoRow('ระดับชั้น:', _schoolLevel),
+                        _buildInfoRow('โรงเรียน:', _school),
+                        _buildInfoRow('สถานะ:', _status), // แสดง status
+                        _buildInfoRow('คะแนนรวม:', _totalScore.toString()),
+                        const SizedBox(height: 20),
+                        const Text(
+                          'คะแนนแต่ละบทเรียน:',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.indigo,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        _chapterScores.isEmpty
+                            ? const Text('ยังไม่มีคะแนนบทเรียน')
+                            : Column(
+                                children: _chapterScores.entries.map((entry) {
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                                    child: Text(
+                                      'บทที่ ${entry.key}: ${entry.value} คะแนน',
+                                      style: const TextStyle(fontSize: 16),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                        const SizedBox(height: 40),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => WelcomePage(
+                                  username: widget.username,
+                                  fullName: _fullName,
+                                  currentChapter: _currentChapter, // ส่ง currentChapter
+                                  currentRouteID: _currentRouteID, // ส่ง currentRouteID
+                                ),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 50,
+                              vertical: 15,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text(
+                            "กลับหน้าหลัก",
+                            style: TextStyle(fontSize: 18),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        // ปุ่มสำหรับทำแบบประเมิน (Survey) - ถ้ามีแยกต่างหาก
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => SurveyPage()), 
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 50,
+                              vertical: 15,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text(
+                            "ทำแบบสำรวจ",
+                            style: TextStyle(fontSize: 18),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+      ),
+    );
   }
 
   Widget _buildInfoRow(String label, String value) {
@@ -108,200 +223,6 @@ class _SummaryPageState extends State<SummaryPage> {
             style: const TextStyle(fontSize: 18, color: Colors.black),
           ),
         ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('สรุปผลคะแนน'),
-        automaticallyImplyLeading: false, // ปิดปุ่มย้อนกลับ
-      ),
-      body: SafeArea(
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _errorMessage.isNotEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Text(
-                        _errorMessage,
-                        style: const TextStyle(color: Colors.red, fontSize: 16),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  )
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.check_circle_outline,
-                          color: Colors.green,
-                          size: 80,
-                        ),
-                        const SizedBox(height: 20),
-                        const Text(
-                          "ยินดีด้วย!",
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 30),
-                        _buildInfoRow("ชื่อ-สกุล:", _fullName),
-                        _buildInfoRow("สถานะ:", _status),
-                        _buildInfoRow("อายุ:", _age.toString()),
-                        _buildInfoRow(
-                          "คะแนนรวมทั้งสิ้น:",
-                          _totalScore.toString(),
-                        ),
-                        const SizedBox(height: 30),
-
-                        // ส่วนแสดงคะแนนที่ดีที่สุดแต่ละบท
-                        if (_chapterScores.isNotEmpty) ...[
-                          const Text(
-                            "คะแนนที่ดีที่สุดรายบท:",
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blueAccent,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 10),
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            margin: const EdgeInsets.symmetric(horizontal: 20),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.blue[100]!),
-                              borderRadius: BorderRadius.circular(10),
-                              color: Colors.blue[50],
-                            ),
-                            child: Column(
-                              children: _chapterScores.entries.map((entry) {
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 4.0,
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'บทที่ ${entry.key}:',
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      Text(
-                                        '${entry.value} คะแนน',
-                                        style: const TextStyle(fontSize: 16),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 30),
-                        // ส่วนแสดงประวัติการทำแต่ละครั้ง
-                        if (_chapterAttempts.isNotEmpty) ...[
-                          const Text(
-                            "ประวัติการทำแต่ละครั้ง:",
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.orange,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 10),
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            margin: const EdgeInsets.symmetric(horizontal: 20),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.orange[100]!),
-                              borderRadius: BorderRadius.circular(10),
-                              color: Colors.orange[50],
-                            ),
-                            child: ListView.builder(
-                              shrinkWrap: true, // ทำให้ ListView ใช้พื้นที่เท่าที่จำเป็น
-                              physics: const NeverScrollableScrollPhysics(), // ปิดการ scroll ของ ListView นี้
-                              itemCount: _chapterAttempts.length,
-                              itemBuilder: (context, index) {
-                                final attempt = _chapterAttempts[index];
-                                final timestamp = DateTime.parse(attempt['attempt_time']);
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 4.0),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'เส้นทางที่ ${attempt['route_id']}, บทที่ ${attempt['chapter_number']}:',
-                                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                                      ),
-                                      Text(
-                                        '${attempt['score']} คะแนน (${timestamp.toLocal().toString().split('.')[0]})',
-                                        style: const TextStyle(fontSize: 16),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 40),
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(builder: (context) => const SurveyPage()),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 50,
-                              vertical: 15,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          child: const Text(
-                            "ทำแบบประเมิน",
-                            style: TextStyle(fontSize: 18),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        ElevatedButton(
-                          onPressed: () {
-                            // กลับไปยังหน้า WelcomePage
-                            Navigator.popUntil(context, (route) => route.isFirst);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                            textStyle: const TextStyle(fontSize: 18),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          child: const Text('กลับหน้าหลัก'),
-                        ),
-                      ],
-                    ),
-                  ),
       ),
     );
   }
