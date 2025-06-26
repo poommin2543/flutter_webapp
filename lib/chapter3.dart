@@ -1,20 +1,23 @@
+// lib/chapter3.dart
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-//import 'chapter4.dart';
-import 'dart:html' as html;
-import 'gate_result_page3.dart'; // นำเข้า GateResultPage ที่ถูกต้อง
+import 'dart:html' as html; // สำหรับ AudioElement
+import 'gate_result_page.dart'; // นำเข้า GateResultPage ที่รวม
+import 'constants.dart'; // นำเข้า AppConstants
 
 class Chapter3Page extends StatefulWidget {
   final int chapter;
   final String username;
+  final int routeId; // เพิ่ม: รับ routeId เข้ามา
   final VoidCallback onFinished;
 
   Chapter3Page({
     required this.chapter,
     required this.username,
+    required this.routeId, // กำหนดให้รับ routeId
     required this.onFinished,
   });
 
@@ -24,21 +27,20 @@ class Chapter3Page extends StatefulWidget {
 
 class _Chapter3PageState extends State<Chapter3Page> {
   late YoutubePlayerController _controller;
+  // สำหรับ Web, path ของ Audio ต้องสัมพันธ์กับ web/index.html
   final html.AudioElement correctAudio = html.AudioElement(
-    //'assets/sounds/correct.mp3',
-    'assets/sounds/wrong.mp3',
+    'assets/sounds/correct.mp3', // ตรวจสอบว่ามีไฟล์นี้ใน web/assets/sounds
   )..preload = 'auto';
   final html.AudioElement wrongAudio = html.AudioElement(
-    //'assets/sounds/wrong.mp3',
-    'assets/sounds/correct.mp3',
+    'assets/sounds/wrong.mp3', // ตรวจสอบว่ามีไฟล์นี้ใน web/assets/sounds
   )..preload = 'auto';
 
   final List<String> videoIds = [
     'AvcAVT_XQA0',
     'OBnA5HF6kvk',
     '3xzXJboz1E0',
-    'WwSfLUtrx_Y',
-    'WwSfLUtrx_Y',
+    'WwSfLUtrx_Y', // วิดีโอซ้ำในโจทย์เดิม อาจจะแทนด้วยรูปภาพ
+    'WwSfLUtrx_Y', // วิดีโอซ้ำในโจทย์เดิม อาจจะแทนด้วยรูปภาพ
   ];
   final List<String> questions = [
     'พฤติกรรมของเยาวชนที่หันเข้าหาบุหรี่ไฟฟ้าคืออะไร?',
@@ -67,7 +69,7 @@ class _Chapter3PageState extends State<Chapter3Page> {
   final List<String> answers = [
     'ถูกทุกข้อ',
     'สมองสูญเสียการพัฒนา',
-    'จริง',
+    'ไม่จริง', // แก้ไขตามคำตอบที่ถูกต้องใน backend
     'ไม่จริงทั้งหมด',
     'EVALI',
   ];
@@ -85,7 +87,7 @@ class _Chapter3PageState extends State<Chapter3Page> {
     userAnswers = List.filled(videoIds.length, '');
     _controller = YoutubePlayerController.fromVideoId(
       videoId: videoIds[0],
-      params: YoutubePlayerParams(
+      params: const YoutubePlayerParams(
         showFullscreenButton: true,
         showControls: true,
       ),
@@ -99,7 +101,9 @@ class _Chapter3PageState extends State<Chapter3Page> {
   }
 
   void _loadVideoAtIndex(int idx) {
-    _controller.loadVideoById(videoId: videoIds[idx]);
+    if (idx < videoIds.length && idx < 3) { // สำหรับวิดีโอ 3 ตัวแรก
+      _controller.loadVideoById(videoId: videoIds[idx]);
+    }
     setState(() {
       answered = false;
       userAnswers[idx] = '';
@@ -126,7 +130,7 @@ class _Chapter3PageState extends State<Chapter3Page> {
 
     setState(() {});
 
-    await Future.delayed(Duration(seconds: 2));
+    await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
 
     if (isCorrect) {
@@ -137,21 +141,24 @@ class _Chapter3PageState extends State<Chapter3Page> {
       currentIndex++;
       _loadVideoAtIndex(currentIndex);
     } else {
+      // เมื่อจบบทเรียน
       await http.post(
-        Uri.parse('https://apiwebmoss.roverautonomous.com/submit_score'),
+        Uri.parse('${AppConstants.API_BASE_URL}/submit_score'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'username': widget.username,
+          'route_id': widget.routeId, // ส่ง route_id
           'chapter_number': widget.chapter,
           'score': totalScore,
         }),
       );
       await http.post(
-        Uri.parse('https://apiwebmoss.roverautonomous.com/update_progress'),
+        Uri.parse('${AppConstants.API_BASE_URL}/update_progress'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'username': widget.username,
           'current_chapter': widget.chapter + 1,
+          'current_route_id': widget.routeId, // ส่ง routeId ปัจจุบัน
         }),
       );
 
@@ -159,7 +166,7 @@ class _Chapter3PageState extends State<Chapter3Page> {
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
-          title: Text("คะแนนของคุณ"),
+          title: const Text("คะแนนของคุณ"),
           content: Text("คุณได้ $totalScore จาก ${answers.length} ข้อ"),
           actions: [
             TextButton(
@@ -168,12 +175,17 @@ class _Chapter3PageState extends State<Chapter3Page> {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (_) =>
-                        GateResultPage(chapter: 4, username: widget.username),
+                    builder: (_) => GateResultPage(
+                      chapterDescription: 'บททดสอบเกี่ยวกับการตัดสินใจ',
+                      message: 'จบบทที่ ${widget.chapter} แล้ว 🎉',
+                      nextChapter: widget.chapter + 1,
+                      nextRouteId: widget.routeId, // ส่ง routeId ปัจจุบัน
+                      username: widget.username,
+                    ),
                   ),
                 );
               },
-              child: Text('OK'),
+              child: const Text('OK'),
             ),
           ],
         ),
@@ -199,7 +211,7 @@ class _Chapter3PageState extends State<Chapter3Page> {
         automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             SizedBox(
@@ -208,13 +220,14 @@ class _Chapter3PageState extends State<Chapter3Page> {
               child: currentIndex == 3
                   ? Image.asset('assets/images/Q34.jpg', fit: BoxFit.contain)
                   : currentIndex == 4
-                  ? Image.asset('assets/images/Q35.jpg', fit: BoxFit.contain)
-                  : YoutubePlayer(controller: _controller),
+                      ? Image.asset('assets/images/Q35.jpg', fit: BoxFit.contain)
+                      : YoutubePlayer(controller: _controller),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Text(
               questions[currentIndex],
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
             ),
             ...options[currentIndex].map(
               (opt) => Container(
@@ -229,8 +242,8 @@ class _Chapter3PageState extends State<Chapter3Page> {
                             setState(() => userAnswers[currentIndex] = val!),
                 ),
               ),
-            ),
-            if (answered) SizedBox(height: 10),
+            ).toList(), // เพิ่ม .toList()
+            if (answered) const SizedBox(height: 10),
             if (answered)
               Text(
                 isCorrect ? 'ตอบถูกต้อง 🎉' : 'ผิด ลองใหม่ 😟',
@@ -239,20 +252,26 @@ class _Chapter3PageState extends State<Chapter3Page> {
                   color: isCorrect ? Colors.green : Colors.red,
                 ),
               ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed:
-                  (!answered && userAnswers[currentIndex].isNotEmpty) ||
-                      answered
-                  ? _submitAnswer
-                  : null,
+                  (!answered && userAnswers[currentIndex].isNotEmpty) || answered
+                      ? _submitAnswer
+                      : null,
               child: Text(
                 answered
                     ? (currentIndex + 1 < videoIds.length ? 'ถัดไป' : 'ส่ง')
                     : 'ยืนยัน',
               ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueAccent,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                textStyle: const TextStyle(fontSize: 18),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Image.asset(characterImage, height: 120),
           ],
         ),

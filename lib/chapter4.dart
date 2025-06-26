@@ -1,8 +1,10 @@
+// lib/chapter4.dart
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'gate_result_page4.dart'; // นำเข้า GateResultPage ที่ถูกต้อง
+import 'gate_result_page.dart'; // นำเข้า GateResultPage ที่รวม
+import 'constants.dart'; // นำเข้า AppConstants
 
 // คลาสสำหรับเก็บข้อมูลข้อความแชท
 class ChatMessage {
@@ -12,15 +14,17 @@ class ChatMessage {
   ChatMessage({required this.text, required this.isUser});
 }
 
-// วิดเจ็ตหลักสำหรับ Chapter 3
+// วิดเจ็ตหลักสำหรับ Chapter 4
 class Chapter4Page extends StatefulWidget {
   final int chapter;
   final String username;
+  final int routeId; // เพิ่ม: รับ routeId เข้ามา
   final VoidCallback onFinished; // Callback เมื่อจบ Chapter
 
   Chapter4Page({
     required this.chapter,
     required this.username,
+    required this.routeId, // กำหนดให้รับ routeId
     required this.onFinished,
   });
 
@@ -30,7 +34,6 @@ class Chapter4Page extends StatefulWidget {
 
 class _Chapter4PageState extends State<Chapter4Page> {
   // ข้อมูลแบบทดสอบ (Quiz) ที่กำหนดไว้ล่วงหน้า
-  // ในแอปพลิเคชันจริง อาจจะดึงมาจาก API หรือกำหนดค่าในที่อื่น
   List<String> questions = [
     "ลองสูบบุหรี่ไฟฟ้าหน่อยไหม มันหอมและอร่อยมากเลยนะ ไม่อันตรายด้วย",
   ];
@@ -43,22 +46,18 @@ class _Chapter4PageState extends State<Chapter4Page> {
     ],
   ];
   List<String> answers = ["ยังไงฉันก็จะไม่ยุ่งกับมันเด็ดขาด"];
-  // รายการสำหรับเก็บคำตอบของผู้ใช้สำหรับแต่ละคำถาม
   List<String> userAnswers = [];
 
   int score = 0; // คะแนนของผู้ใช้
   int questionCount = 0; // ตัวแปรสำหรับนับจำนวนครั้งที่ AI ตอบกลับ
 
-  final TextEditingController _chatController =
-      TextEditingController(); // ตัวควบคุมสำหรับช่องพิมพ์แชท
-  final List<ChatMessage> _chatMessages = []; // รายการข้อความในแชท
-  bool _isChatLoading = false; // สถานะการโหลดข้อความจาก n8n
+  final TextEditingController _chatController = TextEditingController();
+  final List<ChatMessage> _chatMessages = [];
+  bool _isChatLoading = false;
 
   @override
   void initState() {
     super.initState();
-    // กำหนดค่าเริ่มต้นของ userAnswers ให้มีขนาดเท่ากับจำนวนคำถาม
-    // และใส่ค่าว่างเปล่า ("") ลงไปในแต่ละตำแหน่ง
     userAnswers = List<String>.filled(questions.length, "");
   }
 
@@ -66,19 +65,19 @@ class _Chapter4PageState extends State<Chapter4Page> {
   Future<void> calculateScore() async {
     score = 0;
     for (int i = 0; i < answers.length; i++) {
-      // ตรวจสอบคำตอบตามความยาวของ answers
       if (userAnswers[i] == answers[i]) {
         score++;
       }
     }
 
-    // ส่งคะแนนไป backend
+    // ส่งคะแนนไป backend พร้อม route_id
     try {
       await http.post(
-        Uri.parse('https://apiwebmoss.roverautonomous.com/submit_score'),
+        Uri.parse('${AppConstants.API_BASE_URL}/submit_score'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'username': widget.username,
+          'route_id': widget.routeId, // ส่ง route_id
           'chapter_number': widget.chapter,
           'score': score,
         }),
@@ -86,54 +85,51 @@ class _Chapter4PageState extends State<Chapter4Page> {
       print('Score submitted successfully!');
     } catch (e) {
       print('Error submitting score: $e');
-      // อาจแสดงข้อความแจ้งเตือนผู้ใช้หากส่งคะแนนไม่สำเร็จ
     }
 
-    // อัปเดต progress ไป backend
+    // อัปเดต progress ไป backend พร้อม route_id (ซึ่งคือ routeId เดิม)
     try {
       await http.post(
-        Uri.parse('https://apiwebmoss.roverautonomous.com/update_progress'),
+        Uri.parse('${AppConstants.API_BASE_URL}/update_progress'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'username': widget.username,
-          'current_chapter': widget.chapter + 1, // อัปเดตเป็น chapter ถัดไป
+          'current_chapter': widget.chapter + 1,
+          'current_route_id': widget.routeId, // ส่ง routeId ปัจจุบัน
         }),
       );
       print('Progress updated successfully!');
     } catch (e) {
       print('Error updating progress: $e');
-      // อาจแสดงข้อความแจ้งเตือนผู้ใช้หากอัปเดต progress ไม่สำเร็จ
     }
 
-    // แสดงผลคะแนนใน AlertDialog
-    // ใช้ await เพื่อรอให้ AlertDialog แสดงผลและถูกปิดก่อนดำเนินการต่อ
     await showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text("Your Score"), // เปลี่ยนหัวข้อตามที่ผู้ใช้ต้องการ
+          title: const Text("คะแนนของคุณ"),
           content: Text(
-            "You scored $score out of ${answers.length}.",
-          ), // เปลี่ยนข้อความตามที่ผู้ใช้ต้องการ
+            "คุณได้ $score จาก ${answers.length} คะแนน",
+          ),
           actions: [
             TextButton(
               onPressed: () {
-                // Navigator.pop(context); // ปิด dialog แสดงผลคะแนน
-                // นำทางไปยัง Chapter3Page ตามที่ผู้ใช้ระบุ
-                // โปรดทราบ: หากต้องการไป Chapter ถัดไป ควรเปลี่ยนเป็น ChapterNPage()
-                // หรือกลับไปหน้าเลือก Chapter
-                Navigator.push(
+                Navigator.pop(context); // ปิด dialog แสดงผลคะแนน
+                // นำทางไปยัง GateResultPage ที่รวมไว้
+                Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
                     builder: (context) => GateResultPage(
-                      // กลับมาที่ Chapter3Page ตามคำขอ
-                      chapter: 5, // กำหนดหมายเลขบทที่ต้องการ
+                      chapterDescription: 'บททดสอบเกี่ยวกับการจัดการตนเอง',
+                      message: 'จบบทที่ ${widget.chapter} แล้ว 🎉',
+                      nextChapter: widget.chapter + 1,
+                      nextRouteId: widget.routeId, // ส่ง routeId ปัจจุบัน
                       username: widget.username,
                     ),
                   ),
                 );
               },
-              child: Text("OK"),
+              child: const Text("ตกลง"),
             ),
           ],
         );
@@ -141,21 +137,19 @@ class _Chapter4PageState extends State<Chapter4Page> {
     );
   }
 
-  // ฟังก์ชันสำหรับส่งข้อความไปที่ n8n webhook
   Future<void> _sendMessageToN8n(StateSetter setModalState) async {
     final userMessage = _chatController.text;
-    if (userMessage.isEmpty) return; // ไม่ส่งข้อความถ้าว่างเปล่า
+    if (userMessage.isEmpty) return;
 
-    // อัปเดต UI เพื่อแสดงข้อความของผู้ใช้และสถานะกำลังโหลด
     setModalState(() {
       _chatMessages.add(ChatMessage(text: userMessage, isUser: true));
       _isChatLoading = true;
     });
-    _chatController.clear(); // ล้างช่องพิมพ์
+    _chatController.clear();
 
     try {
       final url = Uri.parse(
-        'https://n8nmoss.roverautonomous.com/webhook/1054bc91-ee04-46fd-94a8-4b2055e6087f',
+        'https://n8nmoss.roverautonomous.com/webhook/1054bc91-ee04-46fd-94a8-4b2055e6087f', // ตรวจสอบ URL นี้
       );
       final response = await http.post(
         url,
@@ -165,38 +159,31 @@ class _Chapter4PageState extends State<Chapter4Page> {
 
       if (response.statusCode == 200) {
         final responseBody = jsonDecode(response.body);
-        final botReply = responseBody['reply'] ?? 'Sorry, I did not get that.';
+        final botReply = responseBody['reply'] ?? 'ขออภัย ฉันไม่เข้าใจ.';
 
-        // อัปเดต UI ด้วยข้อความตอบกลับจาก bot
         setModalState(() {
           _chatMessages.add(ChatMessage(text: botReply, isUser: false));
-          questionCount++; // เพิ่มจำนวนครั้งที่ AI ตอบกลับ
+          questionCount++;
         });
 
-        // หาก AI ตอบกลับครบ 3 ครั้งแล้ว ให้แสดงแบบทดสอบ
         if (questionCount >= 3) {
-          // รีเซ็ต questionCount เพื่อไม่ให้แสดงแบบทดสอบซ้ำทันที
-          // สามารถปรับเปลี่ยน logic ได้ตามต้องการ
-          questionCount = 0;
+          questionCount = 0; // รีเซ็ต
           _showQuiz();
         }
       } else {
-        // กรณีเกิดข้อผิดพลาดในการเชื่อมต่อ n8n
         setModalState(() {
           _chatMessages.add(
-            ChatMessage(text: 'Error: ${response.statusCode}', isUser: false),
+            ChatMessage(text: 'ข้อผิดพลาด: ${response.statusCode}', isUser: false),
           );
         });
       }
     } catch (e) {
-      // กรณีเกิดข้อผิดพลาดอื่นๆ
       setModalState(() {
         _chatMessages.add(
-          ChatMessage(text: 'Error: ${e.toString()}', isUser: false),
+          ChatMessage(text: 'ข้อผิดพลาดการเชื่อมต่อ: ${e.toString()}', isUser: false),
         );
       });
     } finally {
-      // สิ้นสุดการโหลด
       setModalState(() {
         _isChatLoading = false;
       });
@@ -209,40 +196,32 @@ class _Chapter4PageState extends State<Chapter4Page> {
       context: context,
       barrierDismissible: false, // ป้องกันการปิด dialog ด้วยการแตะนอกกรอบ
       builder: (context) {
-        // ใช้ StatefulBuilder เพื่อจัดการสถานะภายใน AlertDialog โดยเฉพาะ
-        // เพื่อให้อัปเดต UI ของ RadioListTile ได้ถูกต้อง
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
             return AlertDialog(
-              title: Text("Quiz Time!"),
+              title: const Text("แบบทดสอบ!"),
               content: SingleChildScrollView(
-                // ทำให้เนื้อหาเลื่อนได้ถ้ามีคำถามเยอะ
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // วนลูปเพื่อแสดงคำถามและตัวเลือก
                     for (int i = 0; i < questions.length; i++)
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(questions[i], style: TextStyle(fontSize: 18)),
-                          // แสดงตัวเลือกให้ผู้ใช้เลือก
+                          Text(questions[i], style: const TextStyle(fontSize: 18)),
                           ...options[i].map((option) {
                             return RadioListTile<String>(
                               title: Text(option),
                               value: option,
-                              groupValue:
-                                  userAnswers[i], // ค่า groupValue คือ userAnswers[i] สำหรับคำถามนี้
+                              groupValue: userAnswers[i],
                               onChanged: (value) {
-                                // สำคัญ: ใช้ setModalState เพื่ออัปเดตสถานะภายใน dialog เท่านั้น
                                 setModalState(() {
-                                  userAnswers[i] =
-                                      value!; // อัปเดต userAnswers เมื่อเลือกตัวเลือก
+                                  userAnswers[i] = value!;
                                 });
                               },
                             );
                           }).toList(),
-                          SizedBox(height: 10),
+                          const SizedBox(height: 10),
                         ],
                       ),
                   ],
@@ -251,25 +230,20 @@ class _Chapter4PageState extends State<Chapter4Page> {
               actions: [
                 TextButton(
                   onPressed: () async {
-                    // ทำให้ onPressed เป็น async เพื่อใช้ await
-                    // ตรวจสอบว่าผู้ใช้เลือกคำตอบครบทุกข้อแล้วหรือไม่
                     if (userAnswers.every((answer) => answer.isNotEmpty)) {
-                      await calculateScore(); // รอให้การคำนวณคะแนนและการแสดงผลคะแนนเสร็จสิ้น
-                      Navigator.of(
-                        context,
-                      ).pop(); // จากนั้นจึงปิด dialog แบบทดสอบ
+                      await calculateScore();
+                      if (mounted) Navigator.of(context).pop();
                     } else {
-                      // แสดงข้อความเตือนเมื่อยังไม่ได้เลือกคำตอบครบทุกข้อ
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
+                        const SnackBar(
                           content: Text(
-                            'Please select an answer before submitting',
+                            'กรุณาเลือกคำตอบก่อนส่ง',
                           ),
                         ),
                       );
                     }
                   },
-                  child: Text("Submit"),
+                  child: const Text("ส่ง"),
                 ),
               ],
             );
@@ -283,42 +257,34 @@ class _Chapter4PageState extends State<Chapter4Page> {
   void _showChatDialog() {
     showModalBottomSheet(
       context: context,
-      isScrollControlled:
-          true, // ทำให้ bottom sheet สามารถเลื่อนได้เมื่อคีย์บอร์ดปรากฏ
+      isScrollControlled: true,
       builder: (context) {
-        // ใช้ StatefulBuilder เพื่อจัดการสถานะภายใน bottom sheet
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
             return Padding(
               padding: EdgeInsets.only(
-                // ปรับ padding ให้หลบ keyboard
                 bottom: MediaQuery.of(context).viewInsets.bottom,
                 left: 16,
                 right: 16,
                 top: 16,
               ),
-              child: Container(
-                height:
-                    MediaQuery.of(context).size.height *
-                    0.7, // กำหนดความสูงของ bottom sheet
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height * 0.7,
                 child: Column(
                   children: [
-                    // ส่วนแสดงผลข้อความแชท
                     Expanded(
                       child: ListView.builder(
-                        reverse: true, // แสดงข้อความล่าสุดข้างล่าง
+                        reverse: true,
                         itemCount: _chatMessages.length,
                         itemBuilder: (context, index) {
-                          // เข้าถึงข้อความแบบย้อนกลับสำหรับ reverse: true
-                          final message = _chatMessages.reversed
-                              .toList()[index];
+                          final message = _chatMessages.reversed.toList()[index];
                           return Align(
                             alignment: message.isUser
                                 ? Alignment.centerRight
                                 : Alignment.centerLeft,
                             child: Container(
-                              margin: EdgeInsets.symmetric(vertical: 4),
-                              padding: EdgeInsets.symmetric(
+                              margin: const EdgeInsets.symmetric(vertical: 4),
+                              padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
                                 vertical: 8,
                               ),
@@ -331,7 +297,6 @@ class _Chapter4PageState extends State<Chapter4Page> {
                               child: message.isUser
                                   ? Text(message.text)
                                   : MarkdownBody(
-                                      // ใช้ MarkdownBody เพื่อแสดงข้อความที่รองรับ Markdown
                                       data: message.text,
                                       shrinkWrap: true,
                                     ),
@@ -340,16 +305,14 @@ class _Chapter4PageState extends State<Chapter4Page> {
                         },
                       ),
                     ),
-                    // แสดง CircularProgressIndicator เมื่อกำลังโหลดข้อความ
                     if (_isChatLoading)
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
+                      const Padding(
+                        padding: EdgeInsets.all(8.0),
                         child: Align(
                           alignment: Alignment.centerLeft,
                           child: CircularProgressIndicator(),
                         ),
                       ),
-                    // ส่วนสำหรับพิมพ์ข้อความ
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
                       child: Row(
@@ -358,21 +321,21 @@ class _Chapter4PageState extends State<Chapter4Page> {
                             child: TextField(
                               controller: _chatController,
                               decoration: InputDecoration(
-                                hintText: 'Ask something...',
+                                hintText: 'ถามอะไรสักอย่าง...',
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                               ),
                               onSubmitted: (_) => _sendMessageToN8n(
                                 setModalState,
-                              ), // ส่งข้อความเมื่อกด Enter
+                              ),
                             ),
                           ),
                           IconButton(
-                            icon: Icon(Icons.send),
+                            icon: const Icon(Icons.send),
                             onPressed: () => _sendMessageToN8n(
                               setModalState,
-                            ), // ส่งข้อความเมื่อกดปุ่มส่ง
+                            ),
                           ),
                         ],
                       ),
@@ -390,11 +353,10 @@ class _Chapter4PageState extends State<Chapter4Page> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Chapter ${widget.chapter}')),
-      // ปุ่มลอยสำหรับเปิดหน้าต่างแชท
+      appBar: AppBar(title: Text('บทที่ ${widget.chapter}')),
       floatingActionButton: FloatingActionButton(
         onPressed: _showChatDialog,
-        child: Icon(Icons.chat_bubble_outline),
+        child: const Icon(Icons.chat_bubble_outline),
         tooltip: 'Chat with AI Assistant',
       ),
       body: Padding(
@@ -402,29 +364,22 @@ class _Chapter4PageState extends State<Chapter4Page> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              SizedBox(height: 20),
-              Text("ถ้าคุณถูกชักชวนให้สูบบุหรี่ไฟฟ้า "),
-              // เพิ่มปุ่มสำหรับเรียกแบบทดสอบด้วยตนเอง เพื่อการทดสอบ
-
-              // 🧍 Character Image
+              const SizedBox(height: 20),
+              const Text("ถ้าคุณถูกชักชวนให้สูบบุหรี่ไฟฟ้า "),
               Image.asset(
-                'assets/images/buddy_8.png', // Make sure the image is added to pubspec.yaml
+                'assets/images/buddy_8.png',
                 height: 400,
               ),
-
-              SizedBox(height: 10),
-
-              // 💬 Text beside or below character
-              Text(
+              const SizedBox(height: 10),
+              const Text(
                 "คุณจะทำอย่างไร",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
                 textAlign: TextAlign.center,
               ),
-
-              SizedBox(height: 30),
-
-              Text(
+              const SizedBox(height: 30),
+              const Text(
                 "สวัสดี! ฉันพร้อมจะช่วยให้คำปรึกษาแล้วนะ เปิดกล่องข้อความด้างล่างเพื่อคุยกับฉันเลย",
+                textAlign: TextAlign.center,
               ),
             ],
           ),

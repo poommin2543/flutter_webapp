@@ -1,19 +1,22 @@
+// lib/chapter1.dart
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-//import 'chapter2.dart';
 import 'dart:html' as html;
-import 'gate_result_page1.dart'; // นำเข้า GateResultPage ที่ถูกต้อง
+import 'gate_result_page.dart'; // นำเข้า GateResultPage ที่รวม
+import 'constants.dart'; // นำเข้า AppConstants
 
 class Chapter1Page extends StatefulWidget {
   final int chapter;
   final String username;
+  final int routeId; // เพิ่ม: รับ routeId เข้ามา
   final VoidCallback onFinished;
 
   Chapter1Page({
     required this.chapter,
     required this.username,
+    required this.routeId, // กำหนดให้รับ routeId
     required this.onFinished,
   });
 
@@ -113,14 +116,14 @@ class _Chapter1PageState extends State<Chapter1Page> {
   bool answered = false;
   bool isCorrect = false;
 
+  // สำหรับ Web, path ของ Audio ต้องสัมพันธ์กับ web/index.html
   final html.AudioElement correctAudio = html.AudioElement(
-    //'assets/sounds/correct.mp3',
-    'assets/sounds/wrong.mp3',
+    'assets/sounds/correct.mp3', // ตรวจสอบว่ามีไฟล์นี้ใน web/assets/sounds
   )..preload = 'auto';
   final html.AudioElement wrongAudio = html.AudioElement(
-    //'assets/sounds/wrong.mp3',
-    'assets/sounds/correct.mp3',
+    'assets/sounds/wrong.mp3', // ตรวจสอบว่ามีไฟล์นี้ใน web/assets/sounds
   )..preload = 'auto';
+
   final List<String> questionImages = [
     'assets/images/question1.png',
     'assets/images/question2.jpg',
@@ -131,18 +134,23 @@ class _Chapter1PageState extends State<Chapter1Page> {
     'assets/images/question7.webp',
     'assets/images/question8.jpg',
     'assets/images/question9.jpg',
+    'assets/images/question10.jpg', // เพิ่มรูปสำหรับข้อ 10 ถ้ามี
   ];
 
   void playCorrect() {
-    correctAudio.pause();
-    correctAudio.currentTime = 0;
-    correctAudio.play();
+    if (kIsWeb) {
+      correctAudio.pause();
+      correctAudio.currentTime = 0;
+      correctAudio.play();
+    }
   }
 
   void playWrong() {
-    wrongAudio.pause();
-    wrongAudio.currentTime = 0;
-    wrongAudio.play();
+    if (kIsWeb) {
+      wrongAudio.pause();
+      wrongAudio.currentTime = 0;
+      wrongAudio.play();
+    }
   }
 
   void submitAnswer(String selected) async {
@@ -153,19 +161,21 @@ class _Chapter1PageState extends State<Chapter1Page> {
       answered = true;
       isCorrect = correct;
       characterImage = correct
-          ? 'assets/images/buddy_happy.png'
-          : 'assets/images/buddy_sad.png';
+          ? 'assets/images/buddy_happy.png' // รูปบัดดี้มีความสุข
+          : 'assets/images/buddy_sad.png'; // รูปบัดดี้เศร้า
     });
 
-    if (kIsWeb) {
-      correct ? playCorrect() : playWrong();
+    if (correct) {
+      playCorrect();
+    } else {
+      playWrong();
     }
 
-    await Future.delayed(Duration(seconds: 3));
+    await Future.delayed(const Duration(seconds: 3));
 
     setState(() {
       answered = false;
-      characterImage = 'assets/images/buddy_8.png';
+      characterImage = 'assets/images/buddy_8.png'; // กลับไปเป็นรูปปกติ
     });
 
     if (currentIndex + 1 < questions.length) {
@@ -183,45 +193,54 @@ class _Chapter1PageState extends State<Chapter1Page> {
       if (userAnswers[i] == answers[i]) score++;
     }
 
+    // ส่งคะแนนไป backend พร้อม route_id
     await http.post(
-      Uri.parse('https://apiwebmoss.roverautonomous.com/submit_score'),
+      Uri.parse('${AppConstants.API_BASE_URL}/submit_score'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'username': widget.username,
+        'route_id': widget.routeId, // ส่ง route_id
         'chapter_number': widget.chapter,
         'score': score,
       }),
     );
 
+    // อัปเดต progress ไป backend พร้อม route_id (ซึ่งคือ routeId เดิม)
     await http.post(
-      Uri.parse('https://apiwebmoss.roverautonomous.com/update_progress'),
+      Uri.parse('${AppConstants.API_BASE_URL}/update_progress'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'username': widget.username,
         'current_chapter': widget.chapter + 1,
+        'current_route_id': widget.routeId, // ส่ง routeId ปัจจุบัน
       }),
     );
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("คะแนนของคุณ"),
+        title: const Text("คะแนนของคุณ"),
         content: Text("คุณได้ $score จาก ${answers.length} คะแนน"),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.push(
+              // นำทางไปยัง GateResultPage ที่รวมไว้
+              Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
                   builder: (context) => GateResultPage(
-                    chapter: widget.chapter + 1,
                     username: widget.username,
+                    nextChapter: widget.chapter + 1,
+                    nextRouteId: widget.routeId, // ส่ง routeId ปัจจุบัน
+                    message: 'จบบทที่ ${widget.chapter} แล้ว 🎉',
+                    chapterDescription:
+                        'บททดสอบเกี่ยวกับการความเข้าใจเกี่ยวกับบุหรี่ไฟฟ้า', // คำอธิบายสำหรับบทที่ 2
                   ),
                 ),
               );
             },
-            child: Text('ไปต่อ'),
+            child: const Text('ไปต่อ'),
           ),
         ],
       ),
@@ -243,15 +262,16 @@ class _Chapter1PageState extends State<Chapter1Page> {
           child: Column(
             children: [
               Image.asset(characterImage, height: 300),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
 
               if (currentIndex < questionImages.length)
                 Image.asset(questionImages[currentIndex], height: 200),
 
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               Text(
                 questions[currentIndex],
-                style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center, // จัดข้อความให้อยู่กึ่งกลาง
               ),
 
               ...options[currentIndex].map((option) {
@@ -276,7 +296,7 @@ class _Chapter1PageState extends State<Chapter1Page> {
                   child: Text(
                     isCorrect ? '✅ ตอบถูกต้อง 🎉' : '❌ ผิด ลองใหม่นะ 😢',
                     style: TextStyle(
-                      fontSize: 25,
+                      fontSize: 20,
                       color: isCorrect ? Colors.green : Colors.red,
                     ),
                   ),

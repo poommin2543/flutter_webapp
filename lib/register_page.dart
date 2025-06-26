@@ -1,6 +1,8 @@
+// lib/register_page.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'constants.dart'; // นำเข้า AppConstants
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -25,28 +27,41 @@ class _RegisterPageState extends State<RegisterPage> {
       _message = '';
     });
 
-    final response = await http.post(
-      Uri.parse('https://apiwebmoss.roverautonomous.com/register'),
-      headers: <String, String>{'Content-Type': 'application/json'},
-      body: jsonEncode(<String, dynamic>{
-        'username': usernameController.text,
-        'password': passwordController.text,
-        'full_name': fullNameController.text,
-        'old': int.tryParse(ageController.text) ?? 0,
-        'school': schoolController.text,
-        'status': _selectedStatus,
-        'school_level': _selectedStatus == 'Student'
-            ? schoolLevelController.text
-            : '', // ส่งค่าว่างถ้าเป็นครู
-      }),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse('${AppConstants.API_BASE_URL}/register'),
+        headers: <String, String>{'Content-Type': 'application/json'},
+        body: jsonEncode(<String, dynamic>{
+          'username': usernameController.text,
+          'password': passwordController.text,
+          'full_name': fullNameController.text,
+          'old': int.tryParse(ageController.text) ?? 0,
+          'school': schoolController.text,
+          'status': _selectedStatus,
+          'school_level': _selectedStatus == 'Student'
+              ? schoolLevelController.text
+              : '', // ส่งค่าว่างถ้าเป็นครู
+        }),
+      );
 
-    setState(() {
-      _isLoading = false;
-      _message = response.statusCode == 201
-          ? 'User registered successfully'
-          : 'Registration failed: ${response.body}';
-    });
+      setState(() {
+        _isLoading = false;
+        _message = response.statusCode == 201
+            ? 'ลงทะเบียนสำเร็จ!'
+            : 'ลงทะเบียนไม่สำเร็จ: ${jsonDecode(response.body)['message']}';
+      });
+
+      if (response.statusCode == 201) {
+        // Optionally navigate to login page or show success and allow manual navigation
+        Navigator.pop(context); // กลับไปหน้า Login
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _message = 'เกิดข้อผิดพลาดในการเชื่อมต่อ: $e';
+      });
+      print('Registration error: $e');
+    }
   }
 
   void _showLevelDialog() {
@@ -54,15 +69,15 @@ class _RegisterPageState extends State<RegisterPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text("กรุณากรอกระดับชั้น"),
+          title: const Text("กรุณากรอกระดับชั้น"),
           content: TextField(
             controller: schoolLevelController,
-            decoration: InputDecoration(labelText: 'ระดับชั้น'),
+            decoration: const InputDecoration(labelText: 'ระดับชั้น'),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('ตกลง'),
+              child: const Text('ตกลง'),
             ),
           ],
         );
@@ -73,40 +88,40 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Register')),
+      appBar: AppBar(title: const Text('ลงทะเบียน')),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             TextField(
               controller: usernameController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Username (ชื่อผู้ใช้งาน)',
               ),
             ),
             TextField(
               controller: passwordController,
-              decoration: InputDecoration(labelText: 'Password (รหัสผ่าน)'),
+              decoration: const InputDecoration(labelText: 'Password (รหัสผ่าน)'),
               obscureText: true,
             ),
             TextField(
               controller: fullNameController,
-              decoration: InputDecoration(labelText: 'Full Name (ชื่อ-สกุล)'),
+              decoration: const InputDecoration(labelText: 'Full Name (ชื่อ-สกุล)'),
             ),
             TextField(
               controller: ageController,
-              decoration: InputDecoration(labelText: 'Age (อายุ)'),
+              decoration: const InputDecoration(labelText: 'Age (อายุ)'),
               keyboardType: TextInputType.number,
             ),
             TextField(
               controller: schoolController,
-              decoration: InputDecoration(labelText: 'School (โรงเรียน)'),
+              decoration: const InputDecoration(labelText: 'School (โรงเรียน)'),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Row(
               children: [
-                Text("Status (สถานะ): "),
-                SizedBox(width: 10),
+                const Text("Status (สถานะ): "),
+                const SizedBox(width: 10),
                 DropdownButton<String>(
                   value: _selectedStatus,
                   items: <String>['Teacher', 'Student']
@@ -115,8 +130,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           value: value,
                           child: Text(value == 'Teacher' ? 'ครู' : 'นักเรียน'),
                         );
-                      })
-                      .toList(),
+                      }).toList(),
                   onChanged: (String? value) {
                     if (value != null) {
                       setState(() {
@@ -132,15 +146,15 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ],
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _isLoading ? null : registerUser,
               child: _isLoading
-                  ? CircularProgressIndicator(color: Colors.white)
-                  : Text('Register'),
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text('Register'),
             ),
-            SizedBox(height: 20),
-            Text(_message, textAlign: TextAlign.center),
+            const SizedBox(height: 20),
+            Text(_message, textAlign: TextAlign.center, style: TextStyle(color: _message.contains('ไม่สำเร็จ') ? Colors.red : Colors.green)),
           ],
         ),
       ),

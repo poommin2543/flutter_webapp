@@ -1,16 +1,20 @@
+// lib/chapter5.dart
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'summary_page.dart'; // Import the new SummaryPage
+import 'constants.dart'; // นำเข้า AppConstants
 
 class Chapter5Page extends StatefulWidget {
   final int chapter;
   final String username;
+  final int routeId; // เพิ่ม: รับ routeId เข้ามา
   final VoidCallback onFinished;
 
   Chapter5Page({
     required this.chapter,
     required this.username,
+    required this.routeId, // กำหนดให้รับ routeId
     required this.onFinished,
   });
 
@@ -19,11 +23,9 @@ class Chapter5Page extends StatefulWidget {
 }
 
 class _Chapter5PageState extends State<Chapter5Page> {
-  // Controller สำหรับช่องกรอกความคิดเห็น
   final TextEditingController _commentController = TextEditingController();
-  String _message = ''; // สำหรับแสดงข้อความสถานะ (เช่น ส่งสำเร็จ, ข้อผิดพลาด)
+  String _message = '';
 
-  // ข้อมูลสำหรับคำถาม (ยังคงอยู่เพื่อใช้ใน AlertDialog)
   final List<String> questions = [
     "การแนะนำเพื่อนที่ดีด้วยใจของเราเอง เป็นสิ่งที่มีคุณค่า?",
   ];
@@ -33,13 +35,12 @@ class _Chapter5PageState extends State<Chapter5Page> {
   ];
 
   final List<String> answers = ["ใช่ ทุกประการ"];
-  List<String> userAnswers = []; // Initialized in initState
+  List<String> userAnswers = [];
   int score = 0;
 
   @override
   void initState() {
     super.initState();
-    // Initialize userAnswers with empty strings based on the number of questions
     userAnswers = List.filled(questions.length, "");
   }
 
@@ -49,7 +50,6 @@ class _Chapter5PageState extends State<Chapter5Page> {
     super.dispose();
   }
 
-  // ฟังก์ชันสำหรับส่งความคิดเห็นไปยัง Backend
   Future<void> _submitComment() async {
     setState(() {
       _message = 'กำลังส่งความคิดเห็น...';
@@ -57,10 +57,7 @@ class _Chapter5PageState extends State<Chapter5Page> {
 
     try {
       final response = await http.post(
-        // ใช้ URL ของ Go backend ที่รันอยู่
-        Uri.parse(
-          'https://apiwebmoss.roverautonomous.com/add_comment',
-        ), // <-- อัปเดต URL นี้
+        Uri.parse('${AppConstants.API_BASE_URL}/add_comment'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'username': widget.username,
@@ -74,23 +71,22 @@ class _Chapter5PageState extends State<Chapter5Page> {
         setState(() {
           _message = 'ความคิดเห็นถูกส่งสำเร็จ!';
         });
-        _commentController.clear(); // ล้างช่องกรอกข้อความ
-        _showQuizDialog(); // แสดงแบบทดสอบหลังจากส่งความคิดเห็น
+        _commentController.clear();
+        _showQuizDialog();
       } else {
         setState(() {
           _message = 'ข้อผิดพลาดในการส่งความคิดเห็น: ${data['message']}';
         });
-        _showQuizDialog(); // แสดงแบบทดสอบแม้จะส่งความคิดเห็นไม่สำเร็จ
+        _showQuizDialog();
       }
     } catch (e) {
       setState(() {
         _message = 'เกิดข้อผิดพลาดในการเชื่อมต่อ: $e';
       });
-      _showQuizDialog(); // แสดงแบบทดสอบในกรณีเกิดข้อผิดพลาดในการเชื่อมต่อ
+      _showQuizDialog();
     }
   }
 
-  // ฟังก์ชันสำหรับคำนวณคะแนนและส่งไปยัง Backend (ใช้ใน AlertDialog)
   void _calculateAndSubmitScore(BuildContext dialogContext) async {
     score = 0;
     for (int i = 0; i < answers.length; i++) {
@@ -100,34 +96,37 @@ class _Chapter5PageState extends State<Chapter5Page> {
     }
 
     try {
-      // ส่งคะแนนไป backend
+      // ส่งคะแนนไป backend พร้อม route_id
       await http.post(
-        Uri.parse('https://apiwebmoss.roverautonomous.com/submit_score'),
+        Uri.parse('${AppConstants.API_BASE_URL}/submit_score'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'username': widget.username,
+          'route_id': widget.routeId, // ส่ง route_id
           'chapter_number': widget.chapter,
           'score': score,
         }),
       );
 
-      // อัปเดตความคืบหน้าของบทเรียน
+      // อัปเดตความคืบหน้าของบทเรียน (ไม่ไปบทต่อไปแล้ว แต่เป็นการจบเส้นทาง)
+      // อาจจะเซ็ต current_chapter เป็น 1 และ current_route_id เป็น route_id ที่สำเร็จแล้ว + 1
+      // เพื่อปลดล็อค route ถัดไป หรือนำไปหน้า Summary
       await http.post(
-        Uri.parse('https://apiwebmoss.roverautonomous.com/update_progress'),
+        Uri.parse('${AppConstants.API_BASE_URL}/update_progress'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'username': widget.username,
-          'current_chapter': widget.chapter + 1,
+          'current_chapter': 1, // Reset ไปบทที่ 1
+          'current_route_id': widget.routeId + 1, // ปลดล็อค route ถัดไป
         }),
       );
     } catch (e) {
       print('Error submitting score or updating progress: $e');
-      // อาจเพิ่มการแจ้งเตือนผู้ใช้ว่ามีข้อผิดพลาดในการส่งคะแนน
     }
 
-    // ปิด AlertDialog ของแบบทดสอบก่อนแสดง AlertDialog คะแนน
-    Navigator.pop(dialogContext);
+    Navigator.pop(dialogContext); // ปิด AlertDialog ของแบบทดสอบ
 
+    if (!mounted) return;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -137,7 +136,6 @@ class _Chapter5PageState extends State<Chapter5Page> {
           TextButton(
             onPressed: () {
               Navigator.pop(context); // ปิด dialog คะแนน
-              // แทนที่ widget.onFinished() ด้วยการนำทางไปยัง SummaryPage
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
@@ -152,13 +150,11 @@ class _Chapter5PageState extends State<Chapter5Page> {
     );
   }
 
-  // ฟังก์ชันสำหรับแสดงแบบทดสอบในรูปแบบ AlertDialog
   void _showQuizDialog() {
     showDialog(
       context: context,
-      barrierDismissible: false, // ป้องกันการปิด dialog ด้วยการแตะที่อื่น
+      barrierDismissible: false,
       builder: (BuildContext dialogContext) {
-        // ใช้ StatefulBuilder เพื่อจัดการ State ของ RadioListTile ภายใน AlertDialog
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setDialogState) {
             return AlertDialog(
@@ -166,18 +162,16 @@ class _Chapter5PageState extends State<Chapter5Page> {
               content: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize:
-                      MainAxisSize.min, // จำกัดขนาด Column ให้พอดีกับเนื้อหา
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    // ลบ Image.asset ออกไป
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     for (int i = 0; i < questions.length; i++)
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             questions[i],
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
@@ -189,13 +183,12 @@ class _Chapter5PageState extends State<Chapter5Page> {
                               groupValue: userAnswers[i],
                               onChanged: (value) {
                                 setDialogState(() {
-                                  // ใช้ setDialogState เพื่ออัปเดต UI ภายใน dialog
                                   userAnswers[i] = value!;
                                 });
                               },
                             );
                           }).toList(),
-                          SizedBox(height: 10),
+                          const SizedBox(height: 10),
                         ],
                       ),
                   ],
@@ -204,9 +197,7 @@ class _Chapter5PageState extends State<Chapter5Page> {
               actions: [
                 TextButton(
                   onPressed: () {
-                    _calculateAndSubmitScore(
-                      dialogContext,
-                    ); // ส่ง dialogContext ไปด้วย
+                    _calculateAndSubmitScore(dialogContext);
                   },
                   child: const Text('ส่งคำตอบ'),
                 ),
@@ -229,17 +220,12 @@ class _Chapter5PageState extends State<Chapter5Page> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // ลบ Image.asset ออกไป
                 const SizedBox(height: 20),
-                // 🧍‍♂️ INSERT CHARACTER IMAGE HERE
                 Image.asset(
-                  'assets/images/buddy_8.png', // Replace with your actual path
+                  'assets/images/buddy_8.png',
                   height: 300,
                 ),
-
                 const SizedBox(height: 20),
-
-                // ข้อความ "อะไรก็ได้"
                 const Text(
                   "ฉันชื่อ ต้น เป็นนักเรียนมัธยมต้น อยู่ ม.2 ชอบเล่นกีฬา มีเพื่อนสนิทกลุ่มหนึ่งที่บางคนเริ่มสูบบุหรี่ไฟฟ้าเพราะดูเท่และกลิ่นหอม\n\n"
                   "วันหนึ่งหลังเลิกเรียน ต้นนั่งอยู่ใต้ตึกกับกลุ่มเพื่อนสนิท 3–4 คน เพื่อนคนหนึ่งหยิบบุหรี่ไฟฟ้าขึ้นมาแล้วบอกว่า\n\n"
@@ -247,15 +233,13 @@ class _Chapter5PageState extends State<Chapter5Page> {
                   "ต้นลังเล... เขาไม่เคยลองมาก่อน แต่ก็ไม่อยากโดนเพื่อนมองว่า “เชย” หรือ “กลัว”\n\n"
                   "เพื่อนยื่นบุหรี่ไฟฟ้ามาให้ต้น แล้วถามว่า: “จะลองไหม? ลองแค่ทีเดียวก็ได้”",
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 20, // ปรับขนาดฟอนต์ให้เล็กลงหน่อย
                     fontWeight: FontWeight.bold,
                     color: Colors.indigo,
                   ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 20),
-
-                // ช่องกรอกความคิดเห็น
                 TextField(
                   controller: _commentController,
                   maxLines: 5,
@@ -269,13 +253,11 @@ class _Chapter5PageState extends State<Chapter5Page> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // ปุ่มส่งความคิดเห็น
                 ElevatedButton(
                   onPressed: _submitComment,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue, // สีพื้นหลัง
-                    foregroundColor: Colors.white, // สีตัวอักษร
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 40,
                       vertical: 15,
@@ -290,8 +272,6 @@ class _Chapter5PageState extends State<Chapter5Page> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // แสดงข้อความสถานะ
                 _message.isNotEmpty
                     ? Text(
                         _message,
