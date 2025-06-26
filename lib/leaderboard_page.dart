@@ -5,7 +5,10 @@ import 'dart:convert';
 import 'constants.dart'; // นำเข้า AppConstants
 
 class LeaderboardPage extends StatefulWidget {
-  const LeaderboardPage({Key? key}) : super(key: key);
+  final String username;
+  final String fullName; // เพิ่ม fullName เข้ามา
+
+  const LeaderboardPage({Key? key, required this.username, required this.fullName}) : super(key: key);
 
   @override
   _LeaderboardPageState createState() => _LeaderboardPageState();
@@ -17,6 +20,8 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   String _errorMessage = '';
   int? _selectedRouteId; // เพิ่มตัวแปรสถานะสำหรับเก็บ routeId ที่เลือก (null คือ All Routes)
 
+  Map<String, dynamic>? _currentUserRank; // สำหรับเก็บข้อมูลอันดับของผู้ใช้ปัจจุบัน
+
   @override
   void initState() {
     super.initState();
@@ -27,6 +32,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
     setState(() {
       _isLoading = true;
       _errorMessage = ''; // ล้างข้อความข้อผิดพลาดก่อนเริ่มโหลด
+      _currentUserRank = null; // ล้างข้อมูลอันดับผู้ใช้ปัจจุบัน
     });
 
     try {
@@ -43,40 +49,55 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
       if (response.statusCode == 200) {
         final dynamic responseBody = jsonDecode(response.body);
 
+        List<Map<String, dynamic>> fetchedData = [];
+
         // ตรวจสอบรูปแบบการตอบกลับจาก Backend
         if (responseBody is List) {
-          setState(() {
-            _leaderboardData = List<Map<String, dynamic>>.from(responseBody.map((item) {
-              return {
-                'username': item['username']?.toString() ?? 'ไม่ระบุชื่อผู้ใช้',
-                'score': (item['total_score'] is int) ? item['total_score'] : (int.tryParse(item['total_score']?.toString() ?? '0') ?? 0),
-              };
-            }));
-            // เรียงลำดับจากคะแนนสูงสุดไปต่ำสุด
-            _leaderboardData.sort((a, b) => b['score'].compareTo(a['score']));
-          });
+          fetchedData = List<Map<String, dynamic>>.from(responseBody.map((item) {
+            return {
+              'username': item['username']?.toString() ?? 'ไม่ระบุชื่อผู้ใช้',
+              'full_name': item['full_name']?.toString() ?? '', // ตรวจสอบว่า Backend ส่ง full_name มาด้วย
+              'score': (item['total_score'] is int) ? item['total_score'] : (int.tryParse(item['total_score']?.toString() ?? '0') ?? 0),
+            };
+          }));
         } else if (responseBody is Map && responseBody.containsKey('leaderboard') && responseBody['leaderboard'] is List) {
-          setState(() {
-            _leaderboardData = List<Map<String, dynamic>>.from(responseBody['leaderboard'].map((item) {
-              return {
-                'username': item['username']?.toString() ?? 'ไม่ระบุชื่อผู้ใช้',
-                'score': (item['total_score'] is int) ? item['total_score'] : (int.tryParse(item['total_score']?.toString() ?? '0') ?? 0),
-              };
-            }));
-            // เรียงลำดับจากคะแนนสูงสุดไปต่ำสุด
-            _leaderboardData.sort((a, b) => b['score'].compareTo(a['score']));
-          });
+          fetchedData = List<Map<String, dynamic>>.from(responseBody['leaderboard'].map((item) {
+            return {
+              'username': item['username']?.toString() ?? 'ไม่ระบุชื่อผู้ใช้',
+              'full_name': item['full_name']?.toString() ?? '', // ตรวจสอบว่า Backend ส่ง full_name มาด้วย
+              'score': (item['total_score'] is int) ? item['total_score'] : (int.tryParse(item['total_score']?.toString() ?? '0') ?? 0),
+            };
+          }));
         } else if (responseBody is Map && responseBody.containsKey('message') && responseBody['message'] is String) {
           setState(() {
             _errorMessage = 'ข้อผิดพลาดจากเซิร์ฟเวอร์: ${responseBody['message']}';
-            _leaderboardData = []; // เคลียร์ข้อมูลเดิม
           });
         } else {
           setState(() {
             _errorMessage = 'รูปแบบข้อมูลที่ได้รับจากเซิร์ฟเวอร์ไม่ถูกต้อง: ${response.body}';
-            _leaderboardData = []; // เคลียร์ข้อมูลเดิม
           });
         }
+
+        // เรียงลำดับจากคะแนนสูงสุดไปต่ำสุด
+        fetchedData.sort((a, b) => b['score'].compareTo(a['score']));
+
+        // ค้นหาอันดับของผู้ใช้ปัจจุบัน
+        for (int i = 0; i < fetchedData.length; i++) {
+          if (fetchedData[i]['username'] == widget.username) {
+            _currentUserRank = {
+              'rank': i + 1,
+              'username': fetchedData[i]['username'],
+              'full_name': fetchedData[i]['full_name'],
+              'score': fetchedData[i]['score'],
+            };
+            break; // พบแล้ว ออกจากลูป
+          }
+        }
+
+        setState(() {
+          _leaderboardData = fetchedData;
+        });
+
       } else {
         setState(() {
           _errorMessage = 'ไม่สามารถโหลดข้อมูลกระดานผู้นำได้: สถานะ ${response.statusCode} - ${response.body}';
@@ -100,7 +121,6 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('กระดานผู้นำ'),
-        // ไม่ต้องใช้ automaticallyImplyLeading: false เพราะหน้านี้ควรจะกดกลับได้
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
@@ -167,11 +187,59 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                                 color: Colors.blueAccent),
                           ),
                           const SizedBox(height: 20),
+                          // แสดงอันดับของผู้ใช้ปัจจุบัน
+                          if (_currentUserRank != null)
+                            Card(
+                              margin: const EdgeInsets.symmetric(vertical: 8.0),
+                              elevation: 6, // ยกให้สูงกว่าปกติ
+                              color: Colors.blue.shade50, // สีพื้นหลังเพื่อเน้น
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                  side: const BorderSide(color: Colors.blueAccent, width: 2)), // เพิ่มขอบ
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'อันดับของคุณ:',
+                                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          '${_currentUserRank!['rank']}. ${ _currentUserRank!['full_name'].isNotEmpty ? _currentUserRank!['full_name'] : _currentUserRank!['username']}', // แสดงชื่อนามสกุล ถ้ามี
+                                          style: const TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.w700,
+                                              color: Colors.blueGrey),
+                                        ),
+                                        Text(
+                                          '${_currentUserRank!['score']} คะแนน',
+                                          style: const TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.green),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 10), // เว้นวรรคหลังจากอันดับผู้ใช้ปัจจุบัน
+
                           Expanded(
                             child: ListView.builder(
                               itemCount: _leaderboardData.length,
                               itemBuilder: (context, index) {
                                 final user = _leaderboardData[index];
+                                // ไม่แสดงผู้ใช้ปัจจุบันซ้ำในรายการหลัก หากแสดงเป็น Card แยกแล้ว
+                                if (_currentUserRank != null && user['username'] == widget.username) {
+                                  return const SizedBox.shrink(); // ซ่อนรายการนี้
+                                }
                                 return Card(
                                   margin: const EdgeInsets.symmetric(vertical: 8.0),
                                   elevation: 4,
@@ -195,13 +263,16 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                                                 CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                user['username'] ?? 'Unknown',
+                                                user['full_name'].isNotEmpty ? user['full_name'] : user['username'] ?? 'Unknown', // แสดง full_name ก่อน ถ้าไม่ก็แสดง username
                                                 style: const TextStyle(
                                                     fontSize: 18,
                                                     fontWeight: FontWeight.w600),
                                               ),
-                                              // ถ้า backend ส่ง full_name มาด้วยก็แสดงได้
-                                              // Text(entry['full_name'] ?? '', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                                              if (user['full_name'].isNotEmpty && user['full_name'] != user['username']) // ถ้ามี full_name และไม่ซ้ำกับ username
+                                                Text(
+                                                  '(${user['username']})', // แสดง username วงเล็บเล็กๆ
+                                                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                                                ),
                                             ],
                                           ),
                                         ),

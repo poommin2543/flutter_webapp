@@ -128,7 +128,13 @@ class WelcomePage extends StatelessWidget {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const LeaderboardPage()),
+                    MaterialPageRoute(
+                      // แก้ไขตรงนี้: ส่ง username และ fullName ไปยัง LeaderboardPage
+                      builder: (context) => LeaderboardPage(
+                        username: username,
+                        fullName: fullName,
+                      ),
+                    ),
                   );
                 },
                 style: ElevatedButton.styleFrom(
