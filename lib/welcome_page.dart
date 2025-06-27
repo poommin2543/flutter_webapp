@@ -166,7 +166,7 @@ class WelcomePage extends StatelessWidget {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const SurveyPage()),
+                    MaterialPageRoute(builder: (context) => SurveyPage(username: username)), // ส่ง username
                   );
                 },
                 style: ElevatedButton.styleFrom(
