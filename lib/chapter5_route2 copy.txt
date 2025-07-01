@@ -6,7 +6,6 @@ import 'package:http/http.dart' as http;
 import 'summary_page.dart';
 import 'constants.dart';
 import 'route_score_summary_page.dart';
-
 class Chapter5Route2Page extends StatefulWidget {
   final int chapter;
   final String username;
@@ -328,17 +327,10 @@ class _Chapter5Route2PageState extends State<Chapter5Route2Page> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              // Navigator.pushReplacement(
-              //   context,
-              //   MaterialPageRoute(
-              //     builder: (_) => SummaryPage(username: widget.username),
-              //   ),
-              // );
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (_) =>
-                      RouteScoreSummaryPage(username: widget.username),
+                  builder: (_) => SummaryPage(username: widget.username),
                 ),
               );
             },
