@@ -2,11 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'constants.dart'; // นำเข้า AppConstants
+import 'constants.dart'; // Import AppConstants
 
 class LeaderboardPage extends StatefulWidget {
   final String username;
-  final String fullName; // เพิ่ม fullName เข้ามา
+  final String fullName; // Added fullName
 
   const LeaderboardPage({Key? key, required this.username, required this.fullName}) : super(key: key);
 
@@ -18,9 +18,9 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   List<Map<String, dynamic>> _leaderboardData = [];
   bool _isLoading = true;
   String _errorMessage = '';
-  int? _selectedRouteId; // เพิ่มตัวแปรสถานะสำหรับเก็บ routeId ที่เลือก (null คือ All Routes)
+  int? _selectedRouteId; // State variable for selected routeId (null means All Routes)
 
-  Map<String, dynamic>? _currentUserRank; // สำหรับเก็บข้อมูลอันดับของผู้ใช้ปัจจุบัน
+  Map<String, dynamic>? _currentUserRankEntry; // To store current user's rank data
 
   @override
   void initState() {
@@ -31,14 +31,14 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   Future<void> _fetchLeaderboard() async {
     setState(() {
       _isLoading = true;
-      _errorMessage = ''; // ล้างข้อความข้อผิดพลาดก่อนเริ่มโหลด
-      _currentUserRank = null; // ล้างข้อมูลอันดับผู้ใช้ปัจจุบัน
+      _errorMessage = ''; // Clear error message before loading
+      _currentUserRankEntry = null; // Clear current user rank data
     });
 
     try {
       String url = '${AppConstants.API_BASE_URL}/leaderboard';
       if (_selectedRouteId != null) {
-        url += '?route_id=$_selectedRouteId'; // เพิ่ม query parameter ถ้ามีการเลือก routeId
+        url += '?route_id=$_selectedRouteId'; // Add query parameter if a routeId is selected
       }
 
       final response = await http.get(
@@ -49,22 +49,22 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
       if (response.statusCode == 200) {
         final dynamic responseBody = jsonDecode(response.body);
 
-        List<Map<String, dynamic>> fetchedData = [];
+        List<Map<String, dynamic>> parsedData = [];
 
-        // ตรวจสอบรูปแบบการตอบกลับจาก Backend
+        // Check Backend response format
         if (responseBody is List) {
-          fetchedData = List<Map<String, dynamic>>.from(responseBody.map((item) {
+          parsedData = List<Map<String, dynamic>>.from(responseBody.map((item) {
             return {
               'username': item['username']?.toString() ?? 'ไม่ระบุชื่อผู้ใช้',
-              'full_name': item['full_name']?.toString() ?? '', // ตรวจสอบว่า Backend ส่ง full_name มาด้วย
+              'full_name': item['full_name']?.toString() ?? '', // Ensure full_name is parsed
               'score': (item['total_score'] is int) ? item['total_score'] : (int.tryParse(item['total_score']?.toString() ?? '0') ?? 0),
             };
           }));
         } else if (responseBody is Map && responseBody.containsKey('leaderboard') && responseBody['leaderboard'] is List) {
-          fetchedData = List<Map<String, dynamic>>.from(responseBody['leaderboard'].map((item) {
+          parsedData = List<Map<String, dynamic>>.from(responseBody['leaderboard'].map((item) {
             return {
               'username': item['username']?.toString() ?? 'ไม่ระบุชื่อผู้ใช้',
-              'full_name': item['full_name']?.toString() ?? '', // ตรวจสอบว่า Backend ส่ง full_name มาด้วย
+              'full_name': item['full_name']?.toString() ?? '', // Ensure full_name is parsed
               'score': (item['total_score'] is int) ? item['total_score'] : (int.tryParse(item['total_score']?.toString() ?? '0') ?? 0),
             };
           }));
@@ -78,36 +78,66 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
           });
         }
 
-        // เรียงลำดับจากคะแนนสูงสุดไปต่ำสุด
-        fetchedData.sort((a, b) => b['score'].compareTo(a['score']));
+        // Sort data by score in descending order
+        parsedData.sort((a, b) => b['score'].compareTo(a['score']));
 
-        // ค้นหาอันดับของผู้ใช้ปัจจุบัน
-        for (int i = 0; i < fetchedData.length; i++) {
-          if (fetchedData[i]['username'] == widget.username) {
-            _currentUserRank = {
-              'rank': i + 1,
-              'username': fetchedData[i]['username'],
-              'full_name': fetchedData[i]['full_name'],
-              'score': fetchedData[i]['score'],
-            };
-            break; // พบแล้ว ออกจากลูป
+        // Calculate ranks with ties and find current user's rank
+        List<Map<String, dynamic>> rankedData = [];
+        int currentRank = 1;
+        int? lastScore;
+        bool foundCurrentUser = false;
+
+        for (int i = 0; i < parsedData.length; i++) {
+          final user = parsedData[i];
+          final score = user['score'];
+
+          if (lastScore != null && score == lastScore) {
+            // Rank doesn't change for ties
+          } else {
+            currentRank = i + 1; // Rank is based on position if no tie, or first occurrence in a tie group
+          }
+
+          final Map<String, dynamic> userWithRank = {
+            'rank': currentRank,
+            'username': user['username'],
+            'full_name': user['full_name'],
+            'score': score,
+          };
+          rankedData.add(userWithRank);
+          lastScore = score;
+
+          // Find current user's rank
+          if (user['username'] == widget.username) {
+            _currentUserRankEntry = userWithRank;
+            foundCurrentUser = true;
           }
         }
 
+        // If current user was not found in the fetched data (e.g., score is 0 or less, not on leaderboard)
+        if (!foundCurrentUser) {
+          _currentUserRankEntry = {
+            'rank': 0, // Indicate no rank
+            'username': widget.username,
+            'full_name': widget.fullName,
+            'score': 0, // Explicitly show 0 score for unranked
+            'unranked': true, // Custom flag to indicate unranked
+          };
+        }
+
         setState(() {
-          _leaderboardData = fetchedData;
+          _leaderboardData = rankedData;
         });
 
       } else {
         setState(() {
           _errorMessage = 'ไม่สามารถโหลดข้อมูลกระดานผู้นำได้: สถานะ ${response.statusCode} - ${response.body}';
-          _leaderboardData = []; // เคลียร์ข้อมูลเดิม
+          _leaderboardData = []; // Clear existing data
         });
       }
     } catch (e) {
       setState(() {
         _errorMessage = 'เกิดข้อผิดพลาดในการเชื่อมต่อ: ${e.toString()}';
-        _leaderboardData = []; // เคลียร์ข้อมูลเดิม
+        _leaderboardData = []; // Clear existing data
       });
     } finally {
       setState(() {
@@ -116,23 +146,63 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
     }
   }
 
+  // Helper widget for medal icons
+  Widget _buildMedalIcon(int rank, {bool large = false}) {
+    double size = large ? 38 : 28; // Slightly smaller large icon for better fit
+    double radius = large ? 18 : 14; // Slightly smaller radius
+
+    if (rank == 0) { // For "unranked"
+      return CircleAvatar(
+        backgroundColor: Colors.blueGrey.shade700,
+        radius: radius,
+        child: Icon(Icons.mood_bad, color: Colors.white, size: size * 0.7), // A bit smaller unhappy face
+      );
+    }
+    
+    switch (rank) {
+      case 1:
+        return Icon(Icons.emoji_events, color: Colors.amberAccent, size: size);
+      case 2:
+        return Icon(Icons.emoji_events, color: Colors.blueGrey.shade200, size: size); // Silver-ish
+      case 3:
+        return Icon(Icons.emoji_events, color: Colors.orange.shade700, size: size); // Bronze-ish
+      default:
+        return CircleAvatar(
+          backgroundColor: Colors.blueAccent.shade700, // Darker blue for numbers
+          radius: radius,
+          child: Text(
+            '$rank',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: large ? 16 : 13),
+          ),
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('กระดานผู้นำ'),
+        title: const Text(
+          'กระดานผู้นำ',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        backgroundColor: Colors.blue.shade800, // Deeper blue app bar
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: DropdownButton<int?>(
               value: _selectedRouteId,
-              hint: const Text('เลือกเส้นทาง'),
+              hint: const Text('เลือกเส้นทาง', style: TextStyle(color: Colors.white70)),
+              dropdownColor: Colors.blue.shade700, // Dropdown background
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+              iconEnabledColor: Colors.white, // Dropdown arrow color
               items: <DropdownMenuItem<int?>>[
                 const DropdownMenuItem<int?>(
-                  value: null, // null สำหรับ "ทุกเส้นทาง"
+                  value: null, // null for "All Routes"
                   child: Text('ทุกเส้นทาง'),
                 ),
-                for (int i = 1; i <= 3; i++) // สมมติว่ามี 3 เส้นทาง
+                for (int i = 1; i <= 3; i++) // Assuming 3 routes
                   DropdownMenuItem<int?>(
                     value: i,
                     child: Text('เส้นทางที่ $i'),
@@ -141,172 +211,234 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
               onChanged: (int? newValue) {
                 setState(() {
                   _selectedRouteId = newValue;
-                  _fetchLeaderboard(); // โหลดข้อมูลใหม่เมื่อเปลี่ยนเส้นทาง
+                  _fetchLeaderboard(); // Load new data when route changes
                 });
               },
             ),
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator()) // แสดงวงกลมโหลด
-          : _errorMessage.isNotEmpty // ถ้ามีข้อความข้อผิดพลาด
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline, color: Colors.red, size: 50), // ไอคอนข้อผิดพลาด
-                        const SizedBox(height: 10),
-                        Text(
-                          _errorMessage,
-                          style: const TextStyle(color: Colors.red, fontSize: 16),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 20),
-                        ElevatedButton(
-                          onPressed: _fetchLeaderboard, // ปุ่มลองโหลดใหม่
-                          child: const Text('ลองใหม่'),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              : _leaderboardData.isEmpty // ถ้าไม่มีข้อมูลกระดานผู้นำ
-                  ? Center(child: Text('ไม่มีข้อมูลกระดานผู้นำสำหรับ${_selectedRouteId == null ? 'ทุกเส้นทาง' : 'เส้นทางที่ $_selectedRouteId'} ในขณะนี้'))
-                  : Padding(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.blue.shade900,
+              Colors.blue.shade700,
+              Colors.blue.shade500,
+            ],
+          ),
+        ),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: Colors.white)) // Show loading spinner
+            : _errorMessage.isNotEmpty // If there's an error message
+                ? Center(
+                    child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text(
-                            'ผู้เล่นคะแนนสูงสุด',
-                            style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blueAccent),
-                          ),
-                          const SizedBox(height: 20),
-                          // แสดงอันดับของผู้ใช้ปัจจุบัน
-                          if (_currentUserRank != null)
-                            Card(
-                              margin: const EdgeInsets.symmetric(vertical: 8.0),
-                              elevation: 6, // ยกให้สูงกว่าปกติ
-                              color: Colors.blue.shade50, // สีพื้นหลังเพื่อเน้น
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(15),
-                                  side: const BorderSide(color: Colors.blueAccent, width: 2)), // เพิ่มขอบ
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'อันดับของคุณ:',
-                                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          '${_currentUserRank!['rank']}. ${ _currentUserRank!['full_name'].isNotEmpty ? _currentUserRank!['full_name'] : _currentUserRank!['username']}', // แสดงชื่อนามสกุล ถ้ามี
-                                          style: const TextStyle(
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.w700,
-                                              color: Colors.blueGrey),
-                                        ),
-                                        Text(
-                                          '${_currentUserRank!['score']} คะแนน',
-                                          style: const TextStyle(
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.green),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          const SizedBox(height: 10), // เว้นวรรคหลังจากอันดับผู้ใช้ปัจจุบัน
-
-                          Expanded(
-                            child: ListView.builder(
-                              itemCount: _leaderboardData.length,
-                              itemBuilder: (context, index) {
-                                final user = _leaderboardData[index];
-                                // ไม่แสดงผู้ใช้ปัจจุบันซ้ำในรายการหลัก หากแสดงเป็น Card แยกแล้ว
-                                if (_currentUserRank != null && user['username'] == widget.username) {
-                                  return const SizedBox.shrink(); // ซ่อนรายการนี้
-                                }
-                                return Card(
-                                  margin: const EdgeInsets.symmetric(vertical: 8.0),
-                                  elevation: 4,
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12)),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Row(
-                                      children: [
-                                        Text(
-                                          '${index + 1}.',
-                                          style: const TextStyle(
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.deepPurple),
-                                        ),
-                                        const SizedBox(width: 15),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                user['full_name'].isNotEmpty ? user['full_name'] : user['username'] ?? 'Unknown', // แสดง full_name ก่อน ถ้าไม่ก็แสดง username
-                                                style: const TextStyle(
-                                                    fontSize: 18,
-                                                    fontWeight: FontWeight.w600),
-                                              ),
-                                              if (user['full_name'].isNotEmpty && user['full_name'] != user['username']) // ถ้ามี full_name และไม่ซ้ำกับ username
-                                                Text(
-                                                  '(${user['username']})', // แสดง username วงเล็บเล็กๆ
-                                                  style: const TextStyle(fontSize: 14, color: Colors.grey),
-                                                ),
-                                            ],
-                                          ),
-                                        ),
-                                        Text(
-                                          '${user['score'] ?? 0} คะแนน',
-                                          style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.green),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
+                          const Icon(Icons.error_outline, color: Colors.red, size: 50), // Error icon
+                          const SizedBox(height: 10),
+                          Text(
+                            _errorMessage,
+                            style: const TextStyle(color: Colors.red, fontSize: 16),
+                            textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 20),
                           ElevatedButton(
-                            onPressed: () {
-                              Navigator.pop(context); // กลับไปยังหน้า WelcomePage
-                            },
-                            child: const Text('กลับหน้าหลัก'),
+                            onPressed: _fetchLeaderboard, // Reload button
                             style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 30, vertical: 15),
-                              textStyle: const TextStyle(fontSize: 18),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10)),
+                              backgroundColor: Colors.redAccent,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
+                            child: const Text('ลองใหม่'),
                           ),
                         ],
                       ),
                     ),
+                  )
+                : _leaderboardData.isEmpty && _currentUserRankEntry?['unranked'] != true // If no leaderboard data and current user isn't just "unranked"
+                    ? Center(
+                        child: Text(
+                          'ไม่มีข้อมูลกระดานผู้นำสำหรับ${_selectedRouteId == null ? 'ทุกเส้นทาง' : 'เส้นทางที่ $_selectedRouteId'} ในขณะนี้',
+                          style: const TextStyle(color: Colors.white70, fontSize: 18),
+                          textAlign: TextAlign.center,
+                        ),
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          children: [
+                            const Text(
+                              'ผู้เล่นคะแนนสูงสุด',
+                              style: TextStyle(
+                                  fontSize: 30,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.lightGreenAccent, // Greenish glow
+                                  shadows: [
+                                    Shadow(
+                                        blurRadius: 8.0,
+                                        color: Colors.black45,
+                                        offset: Offset(2.0, 2.0))
+                                  ]),
+                            ),
+                            const SizedBox(height: 20),
+                            // Display current user's rank
+                            if (_currentUserRankEntry != null)
+                              Card(
+                                margin: const EdgeInsets.symmetric(vertical: 8.0),
+                                elevation: 8, // Higher elevation to stand out
+                                color: _currentUserRankEntry!['unranked'] == true
+                                    ? Colors.blueGrey.shade800 // Darker grey for unranked
+                                    : Colors.blue.shade700, // Deeper blue for ranked current user
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(18),
+                                    side: BorderSide(
+                                        color: _currentUserRankEntry!['unranked'] == true
+                                            ? Colors.blueGrey.shade600
+                                            : Colors.blue.shade300, // Lighter blue border
+                                        width: 2)),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(18.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'อันดับของคุณ:',
+                                        style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white70),
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          _buildMedalIcon(_currentUserRankEntry!['rank'] as int, large: true),
+                                          const SizedBox(width: 15),
+                                          Expanded(
+                                            child: Text(
+                                              _currentUserRankEntry!['full_name'].isNotEmpty
+                                                  ? _currentUserRankEntry!['full_name']
+                                                  : _currentUserRankEntry!['username'] ?? 'Unknown User', // Prioritize full name
+                                              style: const TextStyle(
+                                                  fontSize: 20,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Colors.white),
+                                            ),
+                                          ),
+                                          _currentUserRankEntry!['unranked'] == true
+                                              ? const Text(
+                                                  'ไร้อันดับ',
+                                                  style: TextStyle(
+                                                      fontSize: 20,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: Colors.white), // White for "Unranked" text
+                                                )
+                                              : Text(
+                                                  '${_currentUserRankEntry!['score']} คะแนน',
+                                                  style: const TextStyle(
+                                                      fontSize: 20,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: Colors.lightGreenAccent), // Score in bright green
+                                                ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            const SizedBox(height: 10), // Spacing after current user's rank
+
+                            Expanded(
+                              child: ListView.builder(
+                                itemCount: _leaderboardData.length,
+                                itemBuilder: (context, index) {
+                                  final user = _leaderboardData[index];
+                                  final int rank = user['rank'];
+
+                                  // Hide the current user's entry in the main list if displayed as a separate card
+                                  if (_currentUserRankEntry != null && user['username'] == widget.username && _currentUserRankEntry!['unranked'] != true) {
+                                    return const SizedBox.shrink(); // Hide this item if ranked and shown above
+                                  }
+                                  // Also hide if current user is unranked and we've already shown their "unranked" card
+                                  if (_currentUserRankEntry != null && user['username'] == widget.username && _currentUserRankEntry!['unranked'] == true) {
+                                    return const SizedBox.shrink();
+                                  }
+
+
+                                  return Card(
+                                    margin: const EdgeInsets.symmetric(vertical: 8.0),
+                                    elevation: 4,
+                                    color: Colors.blue.shade600, // Card background for list items
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12)),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: Row(
+                                        children: [
+                                          _buildMedalIcon(rank), // Use helper for medal/rank
+                                          const SizedBox(width: 15),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  user['full_name'].isNotEmpty
+                                                      ? user['full_name']
+                                                      : user['username'] ?? 'Unknown', // Show full_name first, then username
+                                                  style: const TextStyle(
+                                                      fontSize: 17,
+                                                      fontWeight: FontWeight.w600,
+                                                      color: Colors.white),
+                                                ),
+                                                if (user['full_name'].isNotEmpty && user['full_name'] != user['username']) // If full_name exists and is different from username
+                                                  Text(
+                                                    '(${user['username']})', // Show username in smaller parentheses
+                                                    style: const TextStyle(fontSize: 13, color: Colors.white70),
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+                                          Text(
+                                            '${user['score'] ?? 0} คะแนน',
+                                            style: const TextStyle(
+                                                fontSize: 17,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.lightGreenAccent),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.pop(context); // Go back to WelcomePage
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.teal.shade600, // Button color
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 30, vertical: 15),
+                                textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)),
+                                elevation: 5,
+                                shadowColor: Colors.black54,
+                              ),
+                              child: const Text('กลับหน้าหลัก'),
+                            ),
+                          ],
+                        ),
+                      ),
+      ),
     );
   }
 }
