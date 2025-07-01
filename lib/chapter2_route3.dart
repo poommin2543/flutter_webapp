@@ -50,7 +50,12 @@ class _Chapter2Route3PageState extends State<Chapter2Route3Page> {
     // 'ข้อใดคือทักษะสำคัญที่ผู้นำการเปลี่ยนแปลงควรมี?',
   ];
   final List<List<String>> options = [
-    ['การบังคับ', 'การให้ข้อมูลด้านลบ', 'การสร้างความหวังและการสนับสนุน', 'การตำหนิ'],
+    [
+      'การบังคับ',
+      'การให้ข้อมูลด้านลบ',
+      'การสร้างความหวังและการสนับสนุน',
+      'การตำหนิ',
+    ],
     // ['ไม่มีผล', 'มีผลน้อยมาก', 'มีผลอย่างมากในการกระตุ้นและสร้างความน่าเชื่อถือ', 'ทำให้คนรำคาญ'],
     // ['ติดโปสเตอร์อย่างเดียว', 'จัดกิจกรรมที่น่าสนใจและให้ความรู้', 'พูดคุยกับเพื่อนทีละคน', 'แจ้งครูใหญ่'],
     // ['ทำให้คนสงสัย', 'สร้างความรู้สึกร่วมและเข้าใจง่าย', 'ทำให้เรื่องดูน่าเบื่อ', 'ไม่มีประโยชน์'],
@@ -165,7 +170,9 @@ class _Chapter2Route3PageState extends State<Chapter2Route3Page> {
       if (response.statusCode == 200) {
         print('Score submitted successfully! Progress updated on Backend.');
       } else {
-        print('Failed to submit score: ${response.statusCode} - ${response.body}');
+        print(
+          'Failed to submit score: ${response.statusCode} - ${response.body}',
+        );
       }
     } catch (e) {
       print('Error submitting score: $e');
@@ -177,7 +184,9 @@ class _Chapter2Route3PageState extends State<Chapter2Route3Page> {
         _loadVideoAtIndex(currentIndex);
       });
     } else {
-      print('Chapter ${widget.chapter} (Route ${widget.routeId}) finished. Final score: $totalScore');
+      print(
+        'Chapter ${widget.chapter} (Route ${widget.routeId}) finished. Final score: $totalScore',
+      );
 
       if (!mounted) return;
       showDialog(
@@ -194,7 +203,8 @@ class _Chapter2Route3PageState extends State<Chapter2Route3Page> {
                   MaterialPageRoute(
                     builder: (_) => GateResultPage(
                       chapterDescription: 'กำลังเข้าสู่บทต่อไป...',
-                      message: 'จบบทที่ ${widget.chapter} เส้นทางที่ ${widget.routeId} แล้ว 🎉',
+                      message:
+                          'จบบทที่ ${widget.chapter} เส้นทางที่ ${widget.routeId} แล้ว 🎉',
                       nextChapter: chapterToAdvanceTo,
                       nextRouteId: routeIdToAdvanceTo,
                       username: widget.username,
@@ -242,19 +252,23 @@ class _Chapter2Route3PageState extends State<Chapter2Route3Page> {
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
-            ...options[currentIndex].map(
-              (opt) => Container(
-                color: _optionColor(opt),
-                child: RadioListTile<String>(
-                  title: Text(opt),
-                  value: opt,
-                  groupValue: userAnswers[currentIndex],
-                  onChanged: answered
-                      ? null
-                      : (val) =>
-                            setState(() => userAnswers[currentIndex] = val!)),
-              ),
-            ).toList(),
+            ...options[currentIndex]
+                .map(
+                  (opt) => Container(
+                    color: _optionColor(opt),
+                    child: RadioListTile<String>(
+                      title: Text(opt),
+                      value: opt,
+                      groupValue: userAnswers[currentIndex],
+                      onChanged: answered
+                          ? null
+                          : (val) => setState(
+                              () => userAnswers[currentIndex] = val!,
+                            ),
+                    ),
+                  ),
+                )
+                .toList(),
             if (answered) const SizedBox(height: 10),
             if (answered)
               Text(
@@ -267,9 +281,10 @@ class _Chapter2Route3PageState extends State<Chapter2Route3Page> {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed:
-                  (!answered && userAnswers[currentIndex].isNotEmpty) || answered
-                      ? _submitAnswer
-                      : null,
+                  (!answered && userAnswers[currentIndex].isNotEmpty) ||
+                      answered
+                  ? _submitAnswer
+                  : null,
               child: Text(
                 answered
                     ? (currentIndex + 1 < videoIds.length ? 'ถัดไป' : 'ส่ง')
@@ -278,9 +293,14 @@ class _Chapter2Route3PageState extends State<Chapter2Route3Page> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blueAccent,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 30,
+                  vertical: 15,
+                ),
                 textStyle: const TextStyle(fontSize: 18),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
             const SizedBox(height: 20),

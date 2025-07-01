@@ -36,32 +36,42 @@ class _Chapter3PageState extends State<Chapter3Page> {
   )..preload = 'auto';
 
   final List<String> videoIds = [
-    'gCahggGt7ao', // ตรวจสอบ ID วิดีโอให้ถูกต้อง
-    // 'dfofaZaJ3Rc',
-    // 'OBnA5HF6kvk',
-    // '_8XW_BgiD_Q',
-    // '3xzXJboz1E0',
+    'AvcAVT_XQA0',
+    'OBnA5HF6kvk',
+    '3xzXJboz1E0',
+    'tBUpITvjBNQ',
+    'lfJ1salR9IY',
   ];
   final List<String> questions = [
-    'ทำไมการตั้งเป้าหมายที่ชัดเจนจึงสำคัญในการเลิกบุหรี่ไฟฟ้า?',
-    // 'สิ่งใดที่สามารถช่วยลดความอยากนิโคตินได้?',
-    // 'หากคุณรู้สึกอยากกลับไปสูบบุหรี่ไฟฟ้า ควรทำอย่างไร?',
-    // 'การสนับสนุนจากเพื่อนและครอบครัวมีผลต่อการเลิกบุหรี่ไฟฟ้าอย่างไร?',
-    // 'ข้อใดคือประโยชน์ระยะยาวของการเลิกบุหรี่ไฟฟ้า?',
+    'พฤติกรรมของเยาวชนที่หันเข้าหาบุหรี่ไฟฟ้าคืออะไร?',
+    'สิ่งที่น่ากังวลในวัยเด็กและเยาวชนจากการสูบบุหรี่ไฟฟ้าคืออะไร?',
+    'ข้อเท็จจริงที่ว่าบุหรี่ไฟฟ้าเลิกสูบง่ายกว่าบุหรี่มวนจริงหรือไม่?',
+    'ผู้ที่สูบบุหรี่ไฟฟ้าในประเทศไทยส่วนใหญ่จะเป็นวัยใด?',
+    'สิ่งที่น้องๆ ควรสื่อสารออกไปคืออะไรเกี่ยวกับบุหรี่ไฟฟ้า?',
   ];
   final List<List<String>> options = [
-    ['เพื่อให้มีแรงจูงใจ', 'ไม่มีความสำคัญ', 'ทำให้เครียด', 'ทำให้ต้องพยายามมากขึ้น'],
-    // ['ดื่มกาแฟ', 'ออกกำลังกาย', 'นอนหลับเยอะๆ', 'รับประทานอาหารรสจัด'],
-    // ['ซื้อมาสูบแก้เครียด', 'ปรึกษาผู้เชี่ยวชาญ', 'ไม่สนใจ', 'เก็บไว้คนเดียว'],
-    // ['ไม่มีผลเลย', 'ทำให้รู้สึกกดดัน', 'ช่วยให้มีกำลังใจและทำได้สำเร็จมากขึ้น', 'ทำให้รู้สึกอึดอัด'],
-    // ['ประหยัดเงิน', 'สุขภาพดีขึ้น', 'ความสัมพันธ์กับคนรอบข้างดีขึ้น', 'ถูกทุกข้อ'],
+    ['อยากรู้ อยากลอง', 'ไม่สนใจคำเตือน', 'ขาดความรู้', 'ถูกทุกข้อ'],
+    [
+      'สมองสูญเสียการพัฒนา',
+      'ช่วยให้หายใจโล่ง',
+      'ลดความเครียดได้',
+      'ใช้แล้วรู้สึกว่าเท่และเป็นที่ยอมรับ',
+    ],
+    ['ไม่จริง', 'จริง', 'อาจจะใช่', 'ไม่มีข้อมูลที่ชัดเจน'],
+    ['เด็กประถม', 'วัยรุ่น', 'ผู้ใหญ่ตอนต้น', 'ผู้สูงอายุ'],
+    [
+      'สนับสนุนให้ทุกคนได้ลองด้วยตัวเอง',
+      'ชี้ให้เห็นถึงอันตรายของบุหรี่ไฟฟ้า',
+      'แชร์รีวิวกลิ่นบุหรี่ไฟฟ้าที่หอมที่สุด',
+      'ชวนเพื่อนๆ ซื้อและทดลองสูบด้วยกัน',
+    ],
   ];
   final List<String> answers = [
-    'เพื่อให้มีแรงจูงใจ',
-    // 'ออกกำลังกาย',
-    // 'ปรึกษาผู้เชี่ยวชาญ',
-    // 'ช่วยให้มีกำลังใจและทำได้สำเร็จมากขึ้น',
-    // 'ถูกทุกข้อ',
+    'ถูกทุกข้อ',
+    'สมองสูญเสียการพัฒนา',
+    'ไม่จริง',
+    'วัยรุ่น',
+    'ชี้ให้เห็นถึงอันตรายของบุหรี่ไฟฟ้า',
   ];
 
   int currentIndex = 0;
@@ -70,10 +80,18 @@ class _Chapter3PageState extends State<Chapter3Page> {
   bool answered = false;
   bool isCorrect = false;
   String characterImage = 'assets/images/buddy_8.png';
+  bool videoEnded = false; // add this to your state
+
+  final html.AudioElement backgroundAudio =
+      html.AudioElement('assets/sounds/background.mp3')
+        ..loop = true
+        ..autoplay = true
+        ..volume = 0.3;
 
   @override
   void initState() {
     super.initState();
+    backgroundAudio.play();
     userAnswers = List.filled(videoIds.length, '');
     _controller = YoutubePlayerController.fromVideoId(
       videoId: videoIds[0],
@@ -82,10 +100,20 @@ class _Chapter3PageState extends State<Chapter3Page> {
         showControls: true,
       ),
     );
+
+    _controller.listen((event) {
+      if (event.playerState == PlayerState.ended) {
+        setState(() {
+          videoEnded = true;
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
+    backgroundAudio.pause();
+    backgroundAudio.src = '';
     _controller.close();
     super.dispose();
   }
@@ -94,6 +122,7 @@ class _Chapter3PageState extends State<Chapter3Page> {
     _controller.loadVideoById(videoId: videoIds[idx]);
     setState(() {
       answered = false;
+      videoEnded = false; // reset flag
       userAnswers[idx] = '';
       characterImage = 'assets/images/buddy_8.png';
     });
@@ -106,8 +135,8 @@ class _Chapter3PageState extends State<Chapter3Page> {
     isCorrect = userAnswers[currentIndex] == answers[currentIndex];
     answered = true;
     characterImage = isCorrect
-        ? 'assets/images/buddy_happy.png'
-        : 'assets/images/buddy_sad.png';
+        ? 'assets/images/buddy_8c.gif'
+        : 'assets/images/buddy_8w.gif';
 
     if (kIsWeb) {
       if (isCorrect) {
@@ -165,7 +194,9 @@ class _Chapter3PageState extends State<Chapter3Page> {
       if (response.statusCode == 200) {
         print('Score submitted successfully! Progress updated on Backend.');
       } else {
-        print('Failed to submit score: ${response.statusCode} - ${response.body}');
+        print(
+          'Failed to submit score: ${response.statusCode} - ${response.body}',
+        );
       }
     } catch (e) {
       print('Error submitting score: $e');
@@ -177,7 +208,9 @@ class _Chapter3PageState extends State<Chapter3Page> {
         _loadVideoAtIndex(currentIndex);
       });
     } else {
-      print('Chapter ${widget.chapter} (Route ${widget.routeId}) finished. Final score: $totalScore');
+      print(
+        'Chapter ${widget.chapter} (Route ${widget.routeId}) finished. Final score: $totalScore',
+      );
 
       if (!mounted) return;
       showDialog(
@@ -232,34 +265,60 @@ class _Chapter3PageState extends State<Chapter3Page> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            SizedBox(
-              width: MediaQuery.of(context).size.width * 0.9,
-              height: 400,
-              child: YoutubePlayer(controller: _controller),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Image.asset(characterImage, height: 400),
+                const SizedBox(width: 20),
+                SizedBox(
+                  width: 700,
+                  height: 400,
+                  child: YoutubePlayer(controller: _controller),
+                ),
+              ],
             ),
             const SizedBox(height: 20),
             Text(
               questions[currentIndex],
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
-            ...options[currentIndex].map(
-              (opt) => Container(
-                color: _optionColor(opt),
-                child: RadioListTile<String>(
-                  title: Text(opt),
-                  value: opt,
-                  groupValue: userAnswers[currentIndex],
-                  onChanged: answered
-                      ? null
-                      : (val) =>
-                            setState(() => userAnswers[currentIndex] = val!)),
-              ),
-            ).toList(),
+            ...options[currentIndex]
+                .map(
+                  (opt) => SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.5,
+                    child: Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: RadioListTile<String>(
+                        title: Text(
+                          opt,
+                          style: TextStyle(fontSize: 24),
+                          textAlign: TextAlign.center,
+                        ),
+                        value: opt,
+                        groupValue: userAnswers[currentIndex],
+                        onChanged: (!answered && videoEnded)
+                            ? (val) => setState(
+                                () => userAnswers[currentIndex] = val!,
+                              )
+                            : null,
+                        tileColor: _optionColor(opt),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
             if (answered) const SizedBox(height: 10),
             if (answered)
               Text(
-                isCorrect ? 'ตอบถูกต้อง 🎉' : 'ผิด ลองใหม่ 😟',
+                isCorrect ? 'ตอบถูกต้อง 🎉' : 'ผิด ไม่เป็นไรนะ 😟',
                 style: TextStyle(
                   fontSize: 18,
                   color: isCorrect ? Colors.green : Colors.red,
@@ -268,24 +327,27 @@ class _Chapter3PageState extends State<Chapter3Page> {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed:
-                  (!answered && userAnswers[currentIndex].isNotEmpty) || answered
-                      ? _submitAnswer
-                      : null,
+                  (!videoEnded || answered || userAnswers[currentIndex].isEmpty)
+                  ? null
+                  : _submitAnswer,
               child: Text(
                 answered
                     ? (currentIndex + 1 < videoIds.length ? 'ถัดไป' : 'ส่ง')
                     : 'ยืนยัน',
               ),
               style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 30,
+                  vertical: 15,
+                ),
+                textStyle: const TextStyle(fontSize: 18),
                 backgroundColor: Colors.blueAccent,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                textStyle: const TextStyle(fontSize: 18),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
-            const SizedBox(height: 20),
-            Image.asset(characterImage, height: 120),
           ],
         ),
       ),

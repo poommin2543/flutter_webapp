@@ -2,7 +2,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'constants.dart'; // นำเข้า AppConstants
+import 'constants.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -10,152 +10,274 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  final usernameController = TextEditingController();
-  final passwordController = TextEditingController();
-  final fullNameController = TextEditingController();
-  final ageController = TextEditingController();
-  final schoolController = TextEditingController();
-  final schoolLevelController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _username = TextEditingController();
+  final _password = TextEditingController();
+  final _confirmPassword = TextEditingController();
+  final _fullName = TextEditingController();
+  final _age = TextEditingController();
+  final _school = TextEditingController();
+  final _schoolLevel = TextEditingController();
 
-  String _selectedStatus = 'Teacher';
-  bool _isLoading = false;
+  String _status = 'Teacher';
+  bool _loading = false;
   String _message = '';
+  bool _obscurePassword = true;
+  bool _obscureConfirm = true;
 
-  Future<void> registerUser() async {
-    setState(() {
-      _isLoading = true;
-      _message = '';
-    });
+  Future<void> _register() async {
+    if (!_formKey.currentState!.validate()) return;
 
+    setState(() => _loading = true);
     try {
-      final response = await http.post(
+      final resp = await http.post(
         Uri.parse('${AppConstants.API_BASE_URL}/register'),
-        headers: <String, String>{'Content-Type': 'application/json'},
-        body: jsonEncode(<String, dynamic>{
-          'username': usernameController.text,
-          'password': passwordController.text,
-          'full_name': fullNameController.text,
-          'old': int.tryParse(ageController.text) ?? 0,
-          'school': schoolController.text,
-          'status': _selectedStatus,
-          'school_level': _selectedStatus == 'Student'
-              ? schoolLevelController.text
-              : '', // ส่งค่าว่างถ้าเป็นครู
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'username': _username.text.trim(),
+          'password': _password.text,
+          'full_name': _fullName.text.trim(),
+          'old': int.parse(_age.text),
+          'school': _school.text.trim(),
+          'status': _status,
+          'school_level': _status == 'Student' ? _schoolLevel.text.trim() : '',
         }),
       );
-
+      final body = jsonDecode(resp.body);
       setState(() {
-        _isLoading = false;
-        _message = response.statusCode == 201
+        _message = resp.statusCode == 201
             ? 'ลงทะเบียนสำเร็จ!'
-            : 'ลงทะเบียนไม่สำเร็จ: ${jsonDecode(response.body)['message']}';
+            : 'ลงทะเบียนล้มเหลว: ${body['message'] ?? resp.statusCode}';
       });
-
-      if (response.statusCode == 201) {
-        // Optionally navigate to login page or show success and allow manual navigation
-        Navigator.pop(context); // กลับไปหน้า Login
+      if (resp.statusCode == 201) {
+        Future.delayed(Duration(seconds: 3), () => Navigator.pop(context));
       }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _message = 'เกิดข้อผิดพลาดในการเชื่อมต่อ: $e';
-      });
-      print('Registration error: $e');
+      setState(() => _message = 'เกิดข้อผิดพลาด: $e');
+    } finally {
+      setState(() => _loading = false);
     }
   }
 
-  void _showLevelDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("กรุณากรอกระดับชั้น"),
-          content: TextField(
-            controller: schoolLevelController,
-            decoration: const InputDecoration(labelText: 'ระดับชั้น'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('ตกลง'),
-            ),
-          ],
-        );
-      },
-    );
+  @override
+  void dispose() {
+    _username.dispose();
+    _password.dispose();
+    _confirmPassword.dispose();
+    _fullName.dispose();
+    _age.dispose();
+    _school.dispose();
+    _schoolLevel.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('ลงทะเบียน')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: usernameController,
-              decoration: const InputDecoration(
-                labelText: 'Username (ชื่อผู้ใช้งาน)',
+      appBar: AppBar(title: Text('ลงทะเบียนเพื่อเข้าใช้บริการ')),
+      body: Theme(
+        data: Theme.of(context).copyWith(
+          textTheme: Theme.of(context).textTheme.apply(fontSizeFactor: 1.0),
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Image.asset(
+                'assets/images/login2.png',
+                height: 200,
+                fit: BoxFit.cover,
               ),
-            ),
-            TextField(
-              controller: passwordController,
-              decoration: const InputDecoration(labelText: 'Password (รหัสผ่าน)'),
-              obscureText: true,
-            ),
-            TextField(
-              controller: fullNameController,
-              decoration: const InputDecoration(labelText: 'Full Name (ชื่อ-สกุล)'),
-            ),
-            TextField(
-              controller: ageController,
-              decoration: const InputDecoration(labelText: 'Age (อายุ)'),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: schoolController,
-              decoration: const InputDecoration(labelText: 'School (โรงเรียน)'),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                const Text("Status (สถานะ): "),
-                const SizedBox(width: 10),
-                DropdownButton<String>(
-                  value: _selectedStatus,
-                  items: <String>['Teacher', 'Student']
-                      .map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value == 'Teacher' ? 'ครู' : 'นักเรียน'),
-                        );
-                      }).toList(),
-                  onChanged: (String? value) {
-                    if (value != null) {
-                      setState(() {
-                        _selectedStatus = value;
-                        if (value == 'Student') {
-                          _showLevelDialog();
-                        } else {
-                          schoolLevelController.clear();
-                        }
-                      });
-                    }
-                  },
+              SizedBox(height: 16),
+              Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _isLoading ? null : registerUser,
-              child: _isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text('Register'),
-            ),
-            const SizedBox(height: 20),
-            Text(_message, textAlign: TextAlign.center, style: TextStyle(color: _message.contains('ไม่สำเร็จ') ? Colors.red : Colors.green)),
-          ],
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        _buildField(
+                          _username,
+                          'Username (ชื่อผู้ใช้งาน, กรอกเป็นภาษาอังกฤษหรือตัวเลขเท่านั้น)',
+                          validator: (v) =>
+                              v!.isEmpty ? 'กรุณากรอกชื่อผู้ใช้งาน' : null,
+                        ),
+                        _buildPasswordField(
+                          controller: _password,
+                          label:
+                              'Password (รหัสผ่าน, ตัวอักษรภาษาอังกฤษหรือตัวเลขจำนวน 8 ตัวขึ้นไป)',
+                          obscure: _obscurePassword,
+                          toggle: () => setState(
+                            () => _obscurePassword = !_obscurePassword,
+                          ),
+                          validator: (v) => v!.length < 8
+                              ? 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร'
+                              : null,
+                        ),
+                        _buildPasswordField(
+                          controller: _confirmPassword,
+                          label: 'Confirm Password (ยืนยันรหัสผ่าน)',
+                          obscure: _obscureConfirm,
+                          toggle: () => setState(
+                            () => _obscureConfirm = !_obscureConfirm,
+                          ),
+                          validator: (v) =>
+                              v != _password.text ? 'รหัสผ่านไม่ตรงกัน' : null,
+                        ),
+                        _buildField(
+                          _fullName,
+                          'Full Name (ชื่อ-สกุล, กรอกได้ทั้งภาษาไทยและภาษาอังกฤษ)',
+                          validator: (v) =>
+                              v!.isEmpty ? 'กรุณากรอกชื่อ-สกุล' : null,
+                        ),
+                        _buildField(
+                          _age,
+                          'Age (อายุ)',
+                          keyboardType: TextInputType.number,
+                          validator: (v) {
+                            final n = int.tryParse(v!);
+                            if (n == null || n < 6 || n > 99)
+                              return 'กรุณากรอกอายุที่ถูกต้อง';
+                            return null;
+                          },
+                        ),
+                        _buildField(
+                          _school,
+                          'School (โรงเรียน, กรอกได้ทั้งภาษาไทยและภาษาอังกฤษ)',
+                          validator: (v) =>
+                              v!.isEmpty ? 'กรุณากรอกโรงเรียน' : null,
+                        ),
+                        SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Text('สถานะ: ', style: TextStyle(fontSize: 18)),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: DropdownButtonFormField<String>(
+                                value: _status,
+                                items: ['Teacher', 'Student', 'อื่นๆ']
+                                    .map(
+                                      (e) => DropdownMenuItem<String>(
+                                        value: e,
+                                        child: Text(
+                                          e == 'Teacher'
+                                              ? 'ครู'
+                                              : e == 'Student'
+                                              ? 'นักเรียน'
+                                              : 'อื่นๆ',
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (v) => setState(() {
+                                  _status = v!;
+                                  if (_status == 'Teacher' ||
+                                      _status == 'Student') {
+                                    _schoolLevel.clear();
+                                  }
+                                }),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 16),
+                        if (_status == 'Student' || _status == 'อื่นๆ')
+                          _buildField(
+                            _schoolLevel,
+                            _status == 'Student'
+                                ? 'School Level (ระดับชั้น, เช่น ม.3/4)'
+                                : 'กรุณาระบุสถานะเพิ่มเติม',
+                            validator: (v) =>
+                                v!.isEmpty ? 'กรุณากรอกข้อมูลเพิ่มเติม' : null,
+                          ),
+                        SizedBox(height: 24),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: Size(double.infinity, 50),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onPressed: _loading ? null : _register,
+                          child: _loading
+                              ? CircularProgressIndicator(color: Colors.white)
+                              : Text(
+                                  'สมัครสมาชิก',
+                                  style: TextStyle(fontSize: 18),
+                                ),
+                        ),
+                        if (_message.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 16.0),
+                            child: Text(
+                              _message,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: _message.contains('สำเร็จ')
+                                    ? Colors.green
+                                    : Colors.red,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildField(
+    TextEditingController ctl,
+    String label, {
+    bool obscure = false,
+    TextInputType keyboardType = TextInputType.text,
+    String? Function(String?)? validator,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextFormField(
+        controller: ctl,
+        keyboardType: keyboardType,
+        obscureText: obscure,
+        validator: validator,
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPasswordField({
+    required TextEditingController controller,
+    required String label,
+    required bool obscure,
+    required VoidCallback toggle,
+    String? Function(String?)? validator,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextFormField(
+        controller: controller,
+        obscureText: obscure,
+        validator: validator,
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          suffixIcon: IconButton(
+            icon: Icon(obscure ? Icons.visibility_off : Icons.visibility),
+            onPressed: toggle,
+          ),
         ),
       ),
     );

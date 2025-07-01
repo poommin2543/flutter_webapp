@@ -32,9 +32,44 @@ class _RouteSelectionPageState extends State<RouteSelectionPage> {
 
   // กำหนดเส้นทาง
   final List<Map<String, dynamic>> routes = [
-    {'id': 1, 'name': 'เส้นทางที่ 1', 'isUnlocked': true, 'gateX': -0.6, 'chapterDescription': 'บททดสอบเกี่ยวกับข้อมูลเบื้องต้น'},
-    {'id': 2, 'name': 'เส้นทางที่ 2', 'isUnlocked': true, 'gateX': 0.0, 'chapterDescription': 'บททดสอบเกี่ยวกับความเข้าใจเกี่ยวกับบุหรี่ไฟฟ้า'},
-    {'id': 3, 'name': 'เส้นทางที่ 3', 'isUnlocked': true, 'gateX': 0.6, 'chapterDescription': 'บททดสอบเกี่ยวกับการความสามารถในการสื่อสารและประเมินข้อมูล'},
+    {
+      'id': 1,
+      'name': 'เส้นทางที่ 1',
+      'isUnlocked': false,
+      'gateX': -0.6,
+      'chapterDescription': 'บททดสอบเกี่ยวกับข้อมูลเบื้องต้น',
+    },
+    {
+      'id': 2,
+      'name': 'เส้นทางที่ 2',
+      'isUnlocked': true,
+      'gateX': 0.0,
+      'chapterDescription': 'บททดสอบเกี่ยวกับความเข้าใจเกี่ยวกับบุหรี่ไฟฟ้า',
+    },
+    {
+      'id': 3,
+      'name': 'เส้นทางที่ 3',
+      'isUnlocked': false,
+      'gateX': 0.6,
+      'chapterDescription':
+          'บททดสอบเกี่ยวกับการความสามารถในการสื่อสารและประเมินข้อมูล',
+    },
+    //{
+    //  'id': 4,
+    //  'name': 'เส้นทางลับ',
+    //  'isUnlocked': false,
+    //  'gateX': 0.8,
+    //  'gateY': -0.6,
+    //  'chapterDescription': 'การผจญภัยเพื่อต่อต้านภัยจากบุหรี่ไฟฟ้า',
+    //},
+    //{
+    //  'id': 5,
+    //  'name': 'เส้นทางลับ',
+    //  'isUnlocked': false,
+    //  'gateX': 0.8,
+    //  'gateY': -0.6,
+    //  'chapterDescription': 'การผจญภัยเพื่อต่อต้านภัยจากบุหรี่ไฟฟ้า',
+    //},
   ];
 
   // ฟังก์ชันสำหรับเคลื่อนย้ายตัวละครไปยังประตูและนำทาง
@@ -59,8 +94,11 @@ class _RouteSelectionPageState extends State<RouteSelectionPage> {
           username: widget.username,
           nextChapter: chapterToStart, // จะไปบทที่ 1 ของเส้นทางใหม่
           nextRouteId: selectedRouteId, // เส้นทางที่เลือก
-          message: 'คุณเลือก${routes.firstWhere((r) => r['id'] == selectedRouteId)['name']}ได้แล้ว 🎉',
-          chapterDescription: routes.firstWhere((r) => r['id'] == selectedRouteId)['chapterDescription'], // คำอธิบายสำหรับบทแรกของเส้นทาง
+          message:
+              'คุณเลือก${routes.firstWhere((r) => r['id'] == selectedRouteId)['name']}ได้แล้ว 🎉',
+          chapterDescription: routes.firstWhere(
+            (r) => r['id'] == selectedRouteId,
+          )['chapterDescription'], // คำอธิบายสำหรับบทแรกของเส้นทาง
         ),
       ),
     );
@@ -85,7 +123,21 @@ class _RouteSelectionPageState extends State<RouteSelectionPage> {
           AnimatedAlign(
             alignment: Alignment(_characterX, _characterY),
             duration: _duration,
-            child: Image.asset('assets/images/buddy_8.png', width: 100),
+            child: Builder(
+              builder: (context) {
+                String imagePath;
+                if (widget.selectedCharacterName == 'Ben') {
+                  imagePath = 'assets/images/buddy_8.png';
+                } else if (widget.selectedCharacterName == 'Ava') {
+                  imagePath = 'assets/images/buddy_2.png';
+                } else if (widget.selectedCharacterName == 'Chloe') {
+                  imagePath = 'assets/images/buddy_5.png';
+                } else {
+                  imagePath = 'assets/images/buddy_8R.png'; // fallback
+                }
+                return Image.asset(imagePath, width: 100);
+              },
+            ),
           ),
 
           // ประตู + ปุ่ม
@@ -96,40 +148,46 @@ class _RouteSelectionPageState extends State<RouteSelectionPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: routes.map((route) {
-                  // ตอนนี้ทุกเส้นทางจะปลดล็อคเสมอในหน้านี้
-                  // เพราะหน้านี้ถูกเรียกเมื่อผู้ใช้ "สามารถ" เลือกเส้นทางได้
-                  bool isLocked = !route['isUnlocked']; // ควรจะเป็น false เสมอในหน้านี้
-
+                  bool isLocked = !route['isUnlocked'];
                   String buttonText = 'เริ่ม: ${route['name']}';
 
                   return Column(
                     children: [
+                      // Button stays on top
                       ElevatedButton(
-                        onPressed: isLocked // จะไม่ถูก disabled แล้ว
+                        onPressed: isLocked
                             ? null
                             : () => moveToGate(route['id'], route['gateX']),
-                        child: Text(buttonText, textAlign: TextAlign.center,),
+                        child: Text(buttonText, textAlign: TextAlign.center),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue, // สีเริ่มต้น
-                          minimumSize: const Size(150, 40), // กำหนดขนาดขั้นต่ำ
+                          backgroundColor: Colors.blue,
+                          minimumSize: const Size(150, 40),
                         ),
                       ),
                       const SizedBox(height: 10),
-                      Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Image.asset('assets/images/Gate.webp', height: 160),
-                          if (isLocked) // ถ้า isLocked เป็น false ก็จะไม่แสดง icon lock (ตอนนี้จะไม่แสดงแล้ว)
-                            Icon(
-                              Icons.lock,
-                              size: 60,
-                              color: Colors.red.withOpacity(0.7),
+                      // Make the gate image clickable
+                      GestureDetector(
+                        onTap: isLocked
+                            ? null
+                            : () => moveToGate(route['id'], route['gateX']),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Image.asset(
+                              route['image'] ?? 'assets/images/MainGate.png',
+                              height: 160,
                             ),
-                        ],
+                            if (isLocked)
+                              Icon(
+                                Icons.lock,
+                                size: 60,
+                                color: Colors.red.withOpacity(0.7),
+                              ),
+                          ],
+                        ),
                       ),
-                      if (isLocked) // จะไม่แสดงแล้ว
-                        const SizedBox(height: 5),
-                      if (isLocked) // จะไม่แสดงแล้ว
+                      if (isLocked) const SizedBox(height: 5),
+                      if (isLocked)
                         const Text(
                           'Coming Soon',
                           style: TextStyle(
@@ -156,10 +214,13 @@ class _RouteSelectionPageState extends State<RouteSelectionPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.grey,
                   foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
             ),

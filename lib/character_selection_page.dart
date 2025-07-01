@@ -1,12 +1,12 @@
 // lib/character_selection_page.dart
 import 'package:flutter/material.dart';
-import 'route_selection_page.dart'; // นำเข้าหน้าเลือกเส้นทาง
+import 'route_selection_page.dart';
 
 class CharacterSelectionPage extends StatelessWidget {
   final String username;
   final String fullName;
-  final int currentChapter; // รับ currentChapter
-  final int currentRouteID; // รับ currentRouteID
+  final int currentChapter;
+  final int currentRouteID;
 
   CharacterSelectionPage({
     required this.username,
@@ -17,35 +17,36 @@ class CharacterSelectionPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ข้อมูลตัวละครจำลอง
-    final List<Map<String, String>> characters = [
+    final List<Map<String, dynamic>> characters = [
       {
         'name': 'Ava',
-        'image': 'assets/images/buddy_8.png',
+        'image': 'assets/images/buddy_2.png',
         'description': 'นักเรียนที่อยากเรียนรู้เกี่ยวกับอันตรายของบุหรี่ไฟฟ้า',
+        'available': false,
       },
       {
         'name': 'Ben',
-        'image': 'assets/images/buddy_8.png', // ใช้รูปเดิมไปก่อน
+        'image': 'assets/images/buddy_8.png',
         'description': 'นักกีฬาที่ต้องการหลีกเลี่ยงการสูบบุหรี่ไฟฟ้า',
+        'available': true,
       },
       {
         'name': 'Chloe',
-        'image': 'assets/images/buddy_8.png', // ใช้รูปเดิมไปก่อน
+        'image': 'assets/images/buddy_5.png',
         'description': 'ศิลปินที่ต้องการสร้างสรรค์ผลงานโดยไม่พึ่งนิโคติน',
+        'available': false,
       },
     ];
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('เลือกตัวละครของคุณ'),
-        automaticallyImplyLeading: false, // ซ่อนปุ่มย้อนกลับ
+        automaticallyImplyLeading: false,
       ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Text(
                 'เลือกตัวละครเพื่อเริ่มการผจญภัย!',
@@ -54,75 +55,100 @@ class CharacterSelectionPage extends StatelessWidget {
               ),
               const SizedBox(height: 30),
               Wrap(
-                spacing: 20, // ระยะห่างระหว่างการ์ดแนวนอน
-                runSpacing: 20, // ระยะห่างระหว่างการ์ดแนวตั้ง
+                spacing: 20,
+                runSpacing: 20,
                 alignment: WrapAlignment.center,
                 children: characters.map((character) {
+                  final bool available = character['available'] as bool;
                   return Card(
                     elevation: 5,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15)),
-                    child: InkWell(
-                      onTap: () {
-                        // เมื่อเลือกตัวละคร ให้นำทางไปยังหน้าเลือกเส้นทาง
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => RouteSelectionPage(
-                              username: username,
-                              fullName: fullName,
-                              currentChapter: currentChapter, // ส่ง currentChapter
-                              currentRouteID: currentRouteID, // ส่ง currentRouteID
-                              selectedCharacterName: character['name']!, // ส่งชื่อตัวละครที่เลือก
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Stack(
+                      children: [
+                        Opacity(
+                          opacity: available ? 1.0 : 0.5,
+                          child: Container(
+                            width: 250,
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              children: [
+                                Image.asset(
+                                  character['image']!,
+                                  height: 150,
+                                  fit: BoxFit.cover,
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  character['name']!,
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 5),
+                                Text(
+                                  character['description']!,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                                const SizedBox(height: 10),
+                                ElevatedButton(
+                                  onPressed: available
+                                      ? () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  RouteSelectionPage(
+                                                    username: username,
+                                                    fullName: fullName,
+                                                    currentChapter:
+                                                        currentChapter,
+                                                    currentRouteID:
+                                                        currentRouteID,
+                                                    selectedCharacterName:
+                                                        character['name']!,
+                                                  ),
+                                            ),
+                                          );
+                                        }
+                                      : null,
+                                  child: const Text('เลือกตัวละครนี้'),
+                                ),
+                              ],
                             ),
                           ),
-                        );
-                      },
-                      child: Container(
-                        width: 250, // กำหนดความกว้างของการ์ด
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          children: [
-                            Image.asset(
-                              character['image']!,
-                              height: 150,
-                              fit: BoxFit.cover,
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              character['name']!,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
+                        ),
+                        if (!available)
+                          Positioned.fill(
+                            child: Container(
+                              color: Colors.white.withOpacity(0.6),
+                              child: Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: const [
+                                    Icon(
+                                      Icons.lock,
+                                      size: 50,
+                                      color: Colors.redAccent,
+                                    ),
+                                    SizedBox(height: 5),
+                                    Text(
+                                      'Coming Soon',
+                                      style: TextStyle(
+                                        color: Colors.redAccent,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 5),
-                            Text(
-                              character['description']!,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                            const SizedBox(height: 10),
-                            ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => RouteSelectionPage(
-                                      username: username,
-                                      fullName: fullName,
-                                      currentChapter: currentChapter,
-                                      currentRouteID: currentRouteID,
-                                      selectedCharacterName: character['name']!,
-                                    ),
-                                  ),
-                                );
-                              },
-                              child: const Text('เลือกตัวละครนี้'),
-                            ),
-                          ],
-                        ),
-                      ),
+                          ),
+                      ],
                     ),
                   );
                 }).toList(),
@@ -132,7 +158,7 @@ class CharacterSelectionPage extends StatelessWidget {
                 icon: const Icon(Icons.arrow_back),
                 label: const Text('กลับหน้าหลัก'),
                 onPressed: () {
-                  Navigator.pop(context); // กลับไปยัง WelcomePage
+                  Navigator.pop(context);
                 },
               ),
             ],

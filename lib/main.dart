@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'register_page.dart';
 import 'welcome_page.dart';
-import 'constants.dart'; // นำเข้า AppConstants
+import 'constants.dart'; // AppConstants
 
 void main() {
   runApp(MyApp());
@@ -15,7 +15,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Login',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        textTheme: Theme.of(context).textTheme.apply(fontSizeFactor: 1.6),
+      ),
       home: LoginPage(),
     );
   }
@@ -33,7 +36,6 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
   String _message = '';
 
-  // ฟังก์ชันสำหรับทำการ login
   Future<void> loginUser() async {
     setState(() {
       _isLoading = true;
@@ -43,138 +45,158 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final response = await http.post(
         Uri.parse('${AppConstants.API_BASE_URL}/login'),
-        headers: <String, String>{'Content-Type': 'application/json'},
-        body: jsonEncode(<String, String>{
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
           'username': usernameController.text,
           'password': passwordController.text,
         }),
       );
 
       if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        String fullName = responseData['full_name'];
-        // **แก้ไขตรงนี้**: รับ current_chapter และ current_route_id โดยตรงจาก Backend
-        int currentChapter = responseData['current_chapter'] ?? 1; // Default to 1 if null
-        int currentRouteID = responseData['current_route_id'] ?? 1; // Default to 1 if null
+        final data = jsonDecode(response.body);
+        final fullName = data['full_name'];
+        final currentChapter = data['current_chapter'] ?? 1;
+        final currentRouteID = data['current_route_id'] ?? 1;
 
-        setState(() {
-          _message = 'เข้าสู่ระบบสำเร็จ!';
-        });
-
-        // นำทางไปยัง WelcomePage พร้อมส่งข้อมูลความคืบหน้า (int)
+        setState(() => _message = 'เข้าสู่ระบบสำเร็จ!');
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => WelcomePage(
+            builder: (_) => WelcomePage(
               fullName: fullName,
               username: usernameController.text,
-              currentChapter: currentChapter, // ส่ง currentChapter
-              currentRouteID: currentRouteID, // ส่ง currentRouteID
+              currentChapter: currentChapter,
+              currentRouteID: currentRouteID,
             ),
           ),
         );
       } else {
-        setState(() {
-          _message = 'เข้าสู่ระบบไม่สำเร็จ: ${jsonDecode(response.body)['message']}';
-        });
+        final err = jsonDecode(response.body)['message'];
+        setState(() => _message = 'เข้าสู่ระบบไม่สำเร็จ: $err');
       }
     } catch (e) {
-      setState(() {
-        _message = 'เกิดข้อผิดพลาดในการเชื่อมต่อ: $e';
-      });
-      print('Login error: $e');
+      setState(() => _message = 'เกิดข้อผิดพลาด: $e');
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Main'),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(180.0),
-          child: Column(
-            children: [
-              const Text(
-                'Welcome to Program',
-                style: TextStyle(
-                  color: Color.fromARGB(255, 17, 83, 3),
-                  fontSize: 40,
-                ),
-              ),
-              const Text(
-                'Vape No More',
-                style: TextStyle(
-                  color: Color.fromARGB(255, 2, 82, 13),
-                  fontSize: 30,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Text(
-                'ฉลาดรู้เท่าทันบุหรี่ไฟฟ้า',
-                style: TextStyle(
-                  color: Color.fromARGB(255, 5, 82, 16),
-                  fontSize: 30,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 10),
-            ],
+      appBar: AppBar(title: const Text('Main')),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // 🔹 Background Image
+          Image.asset(
+            'assets/images/login.png',
+            fit: BoxFit.cover, // ปรับให้เต็มจอแบบพอดี
           ),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset('assets/images/login1.png', height: 200),
-                const SizedBox(width: 20),
-                Image.asset('assets/images/login2.png', height: 300),
-              ],
+
+          // 🔹 Login Form Overlay (มีพื้นหลังโปร่ง)
+          SingleChildScrollView(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 500),
+                      Card(
+                        color: Colors.white.withOpacity(
+                          0.9,
+                        ), // โปร่งแสงเล็กน้อย
+                        elevation: 6,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              TextField(
+                                controller: usernameController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Username (กรอกชื่อผู้ใช้งาน)',
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              TextField(
+                                controller: passwordController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Password (กรอกรหัสผ่าน)',
+                                ),
+                                obscureText: true,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : loginUser,
+                              style: ElevatedButton.styleFrom(
+                                minimumSize: const Size(double.infinity, 50),
+                              ),
+                              child: _isLoading
+                                  ? const CircularProgressIndicator(
+                                      color: Colors.white,
+                                    )
+                                  : const Text(
+                                      'Login (ลงชื่อเข้าใช้งาน)',
+                                      style: TextStyle(fontSize: 18),
+                                    ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: _isLoading
+                                  ? null
+                                  : () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => RegisterPage(),
+                                        ),
+                                      );
+                                    },
+                              style: ElevatedButton.styleFrom(
+                                minimumSize: const Size(double.infinity, 50),
+                              ),
+                              child: const Text(
+                                'Register (สมัครเพื่อเข้าใช้งาน)',
+                                style: TextStyle(fontSize: 18),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      if (_message.isNotEmpty)
+                        Text(
+                          _message,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: _message.contains('ไม่สำเร็จ')
+                                ? Colors.red
+                                : Colors.green,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: usernameController,
-              decoration: const InputDecoration(labelText: 'Username'),
-            ),
-            TextField(
-              controller: passwordController,
-              decoration: const InputDecoration(labelText: 'Password'),
-              obscureText: true,
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _isLoading ? null : loginUser,
-              child: _isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text('Login'),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              _message,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: _message.contains('ไม่สำเร็จ') ? Colors.red : Colors.green),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => RegisterPage()),
-                );
-              },
-              child: const Text('Register'),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

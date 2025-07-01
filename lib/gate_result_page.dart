@@ -29,7 +29,8 @@ import 'welcome_page.dart'; // เพิ่ม: สำหรับกลับ�
 
 class GateResultPage extends StatefulWidget {
   final String username;
-  final int nextChapter; // บทต่อไปที่จะไป (เช่น 1, 2, 3, 4, 5, หรือ 6 ถ้าจบบท 5 แล้ว)
+  final int
+  nextChapter; // บทต่อไปที่จะไป (เช่น 1, 2, 3, 4, 5, หรือ 6 ถ้าจบบท 5 แล้ว)
   final int nextRouteId; // เส้นทางปัจจุบัน/ต่อไป (จากที่เลือกมา)
   final String message; // ข้อความแสดงผล
   final String chapterDescription; // คำอธิบายบทต่อไป
@@ -68,9 +69,13 @@ class _GateResultPageState extends State<GateResultPage> {
       );
 
       if (response.statusCode == 200) {
-        print('Progress updated successfully! CurrentChapter: ${widget.nextChapter}, CurrentRouteID: ${widget.nextRouteId}');
+        print(
+          'Progress updated successfully! CurrentChapter: ${widget.nextChapter}, CurrentRouteID: ${widget.nextRouteId}',
+        );
       } else {
-        print('Failed to update progress: ${response.statusCode} - ${response.body}');
+        print(
+          'Failed to update progress: ${response.statusCode} - ${response.body}',
+        );
       }
     } catch (e) {
       print('Error updating progress: $e');
@@ -83,15 +88,17 @@ class _GateResultPageState extends State<GateResultPage> {
       Widget targetPage;
 
       // Logic การนำทางไปยังบทต่อไป หรือหน้าสรุป หรือ WelcomePage
-      if (widget.nextChapter == 6) { // ถ้าเป็นบทที่ 6 (หมายถึงจบบทที่ 5 แล้ว)
-         targetPage = SummaryPage(username: widget.username);
-         // หลังจาก SummaryPage จบ ผู้ใช้จะกลับไปที่ WelcomePage (จัดการใน SummaryPage)
+      if (widget.nextChapter == 6) {
+        // ถ้าเป็นบทที่ 6 (หมายถึงจบบทที่ 5 แล้ว)
+        targetPage = SummaryPage(username: widget.username);
+        // หลังจาก SummaryPage จบ ผู้ใช้จะกลับไปที่ WelcomePage (จัดการใน SummaryPage)
       } else {
         // นำทางไปยัง IntroPage ก่อนเข้า Chapter จริง
         targetPage = IntroPage(
           username: widget.username,
           currentRouteId: widget.nextRouteId,
-          selectedCharacterName: 'ตัวละคร', // อาจจะส่งชื่อตัวละครที่แท้จริงมาจากหน้าเลือกตัวละคร
+          selectedCharacterName:
+              'ตัวละคร', // อาจจะส่งชื่อตัวละครที่แท้จริงมาจากหน้าเลือกตัวละคร
           targetChapter: widget.nextChapter,
         );
       }
@@ -107,7 +114,11 @@ class _GateResultPageState extends State<GateResultPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.message.contains('แล้ว!') ? "คุณมาถึงแล้ว!" : "จบบทที่ ${widget.nextChapter - 1} แล้ว"),
+        title: Text(
+          widget.message.contains('แล้ว!')
+              ? "คุณมาถึงแล้ว!"
+              : "จบบทที่ ${widget.nextChapter - 1} แล้ว",
+        ),
         automaticallyImplyLeading: false,
       ),
       body: Center(

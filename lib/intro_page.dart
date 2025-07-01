@@ -20,12 +20,12 @@ import 'chapter3_route3.dart';
 import 'chapter4_route3.dart';
 import 'chapter5_route3.dart';
 
-
 class IntroPage extends StatelessWidget {
   final String username;
   final int currentRouteId; // รับ routeId ปัจจุบัน
   final String selectedCharacterName; // รับชื่อตัวละครที่เลือก (ถ้ามี)
-  final int targetChapter; // บทที่ต้องการให้ IntroPage นำทางไป (เช่น 1, 2, 3, 4, 5)
+  final int
+  targetChapter; // บทที่ต้องการให้ IntroPage นำทางไป (เช่น 1, 2, 3, 4, 5)
 
   IntroPage({
     required this.username,
@@ -75,7 +75,9 @@ class IntroPage extends StatelessWidget {
               routeId: currentRouteId, // ส่ง routeId
             );
           default:
-            return Text('บทที่ $targetChapter สำหรับเส้นทางที่ $currentRouteId ไม่พร้อมใช้งาน');
+            return Text(
+              'บทที่ $targetChapter สำหรับเส้นทางที่ $currentRouteId ไม่พร้อมใช้งาน',
+            );
         }
       case 2:
         switch (targetChapter) {
@@ -115,7 +117,9 @@ class IntroPage extends StatelessWidget {
               routeId: currentRouteId,
             );
           default:
-            return Text('บทที่ $targetChapter สำหรับเส้นทางที่ $currentRouteId ไม่พร้อมใช้งาน');
+            return Text(
+              'บทที่ $targetChapter สำหรับเส้นทางที่ $currentRouteId ไม่พร้อมใช้งาน',
+            );
         }
       case 3:
         switch (targetChapter) {
@@ -155,7 +159,9 @@ class IntroPage extends StatelessWidget {
               routeId: currentRouteId,
             );
           default:
-            return Text('บทที่ $targetChapter สำหรับเส้นทางที่ $currentRouteId ไม่พร้อมใช้งาน');
+            return Text(
+              'บทที่ $targetChapter สำหรับเส้นทางที่ $currentRouteId ไม่พร้อมใช้งาน',
+            );
         }
       default:
         return Text('เส้นทางที่ $currentRouteId ไม่ถูกต้อง');
@@ -165,7 +171,7 @@ class IntroPage extends StatelessWidget {
   // คำอธิบาย Intro Page ตามบทและเส้นทาง
   String _getIntroDescription() {
     if (targetChapter == 1) {
-      return 'ยินดีต้อนรับเข้าสู่เกม!\nคุณจะได้พบกับบทเรียนและสถานการณ์\nที่จะช่วยให้คุณเข้าใจผลของการสูบบุหรี่ไฟฟ้า';
+      return 'คุณจะได้พบกับบทเรียนและสถานการณ์\nที่จะช่วยให้คุณเข้าใจผลของการสูบบุหรี่ไฟฟ้า';
     } else {
       return 'เตรียมพร้อมสำหรับบทที่ $targetChapter ในเส้นทางที่ $currentRouteId!\nมาเรียนรู้และไขปริศนาไปด้วยกัน';
     }
@@ -175,8 +181,24 @@ class IntroPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Introduction บทที่ $targetChapter'),
-        automaticallyImplyLeading: false, // ❌ ซ่อนปุ่ม back
+        title: Text(() {
+          switch (targetChapter) {
+            case 1:
+              return 'บทที่ 1: ทักษะการเข้าถึงข้อมูล';
+            case 2:
+              return 'บทที่ 2: ทักษะการเข้าใจ';
+            case 3:
+              return 'บทที่ 3: ทักษะการสื่อสาร';
+            case 4:
+              return 'บทที่ 4: ทักษะการตัดสินใจ';
+            case 5:
+              return 'บทที่ 5: ทักษะการจัดการตนเอง';
+            default:
+              return 'บทที่ $targetChapter';
+          }
+        }()),
+        centerTitle: true, // ✅ This centers the title
+        automaticallyImplyLeading: false,
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -185,26 +207,26 @@ class IntroPage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Image.asset(
-                'assets/images/Introduction1.webp', // ใส่ภาพแนะนำเกม
-                height: 600,
+                'assets/images/buddy_8g.gif', // ใส่ภาพแนะนำเกม
+                height: 400,
               ),
               const SizedBox(height: 20),
               Text(
-                'ยินดีต้อนรับเข้าสู่เกม!',
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                'ยินดีต้อนรับเข้าสู่เกม',
+                style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 10),
               Text(
                 _getIntroDescription(),
-                style: TextStyle(fontSize: 18),
+                style: TextStyle(fontSize: 24),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 40),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-                  textStyle: TextStyle(fontSize: 18),
+                  textStyle: TextStyle(fontSize: 24),
                 ),
                 onPressed: () {
                   // นำทางไปยัง Chapter Page ที่ถูกต้อง

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'gate_result_page.dart'; // นำเข้า GateResultPage ที่รวม
 import 'constants.dart'; // นำเข้า AppConstants
+import 'dart:html' as html; // For AudioElement in Flutter Web
 
 // คลาสสำหรับเก็บข้อมูลข้อความแชท
 class ChatMessage {
@@ -44,8 +45,11 @@ class _Chapter4PageState extends State<Chapter4Page> {
       "ไม่เป็นไร ขอบคุณ",
     ],
   ];
-  List<String> answers = ["ยังไงฉันก็จะไม่ยุ่งเกี่ยวกับบุหรี่ไฟฟ้าเด็ดขาด เพราะมันอันตรายต่อสุขภาพและอนาคตของฉัน"];
-  late List<String> userAnswers; // Initialize userAnswers based on the number of questions
+  List<String> answers = [
+    "ยังไงฉันก็จะไม่ยุ่งเกี่ยวกับบุหรี่ไฟฟ้าเด็ดขาด เพราะมันอันตรายต่อสุขภาพและอนาคตของฉัน",
+  ];
+  late List<String>
+  userAnswers; // Initialize userAnswers based on the number of questions
 
   int score = 0; // Score for the quiz in this chapter
   int questionCount = 0; // Counter for chat messages to trigger quiz
@@ -53,11 +57,27 @@ class _Chapter4PageState extends State<Chapter4Page> {
   final TextEditingController _chatController = TextEditingController();
   final List<ChatMessage> _chatMessages = [];
   bool _isChatLoading = false;
+  final html.AudioElement backgroundAudio =
+      html.AudioElement('assets/sounds/background.mp3')
+        ..loop = true
+        ..autoplay = true
+        ..volume = 0.3;
 
   @override
   void initState() {
     super.initState();
-    userAnswers = List<String>.filled(questions.length, ""); // Initialize userAnswers correctly
+    backgroundAudio.play();
+    userAnswers = List<String>.filled(
+      questions.length,
+      "",
+    ); // Initialize userAnswers correctly
+  }
+
+  @override
+  void dispose() {
+    backgroundAudio.pause();
+    backgroundAudio.src = '';
+    super.dispose();
   }
 
   Future<void> _calculateAndSubmitScore() async {
@@ -69,7 +89,8 @@ class _Chapter4PageState extends State<Chapter4Page> {
     }
 
     // ตรวจสอบว่าแบบทดสอบในบทเรียนปัจจุบันเสร็จสมบูรณ์แล้วหรือไม่
-    bool isCurrentChapterQuizFinished = true; // สำหรับบทนี้คือ True เสมอ เพราะเป็นแบบทดสอบข้อเดียวหลังแชท
+    bool isCurrentChapterQuizFinished =
+        true; // สำหรับบทนี้คือ True เสมอ เพราะเป็นแบบทดสอบข้อเดียวหลังแชท
 
     int chapterToAdvanceTo = widget.chapter;
     int routeIdToAdvanceTo = widget.routeId;
@@ -97,16 +118,20 @@ class _Chapter4PageState extends State<Chapter4Page> {
           'chapter': widget.chapter, // บทที่เพิ่งทำแบบทดสอบเสร็จ
           'score': score, // คะแนนที่ได้จากแบบทดสอบนี้
           'route_id': widget.routeId,
-          'is_finished': isCurrentChapterQuizFinished, // True เพราะแบบทดสอบเสร็จสิ้น
+          'is_finished':
+              isCurrentChapterQuizFinished, // True เพราะแบบทดสอบเสร็จสิ้น
           'next_chapter': chapterToAdvanceTo, // บทที่ผู้ใช้ควรจะก้าวหน้าไป
-          'next_route_id': routeIdToAdvanceTo, // เส้นทางที่ผู้ใช้ควรจะก้าวหน้าไป
+          'next_route_id':
+              routeIdToAdvanceTo, // เส้นทางที่ผู้ใช้ควรจะก้าวหน้าไป
         }),
       );
 
       if (response.statusCode == 200) {
         print('Score submitted successfully! Progress updated on Backend.');
       } else {
-        print('Failed to submit score: ${response.statusCode} - ${response.body}');
+        print(
+          'Failed to submit score: ${response.statusCode} - ${response.body}',
+        );
       }
     } catch (e) {
       print('Error submitting score: $e');
@@ -168,14 +193,20 @@ class _Chapter4PageState extends State<Chapter4Page> {
       } else {
         setModalState(() {
           _chatMessages.add(
-            ChatMessage(text: 'ข้อผิดพลาด: ${response.statusCode}', isUser: false),
+            ChatMessage(
+              text: 'ข้อผิดพลาด: ${response.statusCode}',
+              isUser: false,
+            ),
           );
         });
       }
     } catch (e) {
       setModalState(() {
         _chatMessages.add(
-          ChatMessage(text: 'ข้อผิดพลาดการเชื่อมต่อ: ${e.toString()}', isUser: false),
+          ChatMessage(
+            text: 'ข้อผิดพลาดการเชื่อมต่อ: ${e.toString()}',
+            isUser: false,
+          ),
         );
       });
     } finally {
@@ -185,59 +216,78 @@ class _Chapter4PageState extends State<Chapter4Page> {
     }
   }
 
+  Widget _buildQuiz() {
+    return Column(
+      children: [
+        Text(
+          questions[0],
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          textAlign: TextAlign.center,
+        ),
+        ...options[0].map((opt) {
+          bool enabled = userAnswers[0].isEmpty; // not submitted yet
+          return Card(
+            elevation: 3,
+            child: RadioListTile<String>(
+              title: Text(opt, textAlign: TextAlign.center),
+              value: opt,
+              groupValue: userAnswers[0],
+              onChanged: enabled
+                  ? (val) {
+                      setState(() => userAnswers[0] = val!);
+                    }
+                  : null,
+            ),
+          );
+        }).toList(),
+        ElevatedButton(
+          onPressed: userAnswers[0].isNotEmpty
+              ? _calculateAndSubmitScore
+              : null,
+          child: const Text('ส่งคำตอบ'),
+        ),
+      ],
+    );
+  }
+
   void _showQuiz() {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) {
+      builder: (ctx) {
+        String selected = '';
         return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
+          builder: (ctx, modalSetState) {
             return AlertDialog(
-              title: const Text("แบบทดสอบ!"),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    for (int i = 0; i < questions.length; i++)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(questions[i], style: const TextStyle(fontSize: 18)),
-                          ...options[i].map((option) {
-                            return RadioListTile<String>(
-                              title: Text(option),
-                              value: option,
-                              groupValue: userAnswers[i],
-                              onChanged: (value) {
-                                setModalState(() {
-                                  userAnswers[i] = value!;
-                                });
-                              },
-                            );
-                          }).toList(),
-                          const SizedBox(height: 10),
-                        ],
+              title: Text("แบบทดสอบการตัดสินใจ"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(questions[0], style: TextStyle(fontSize: 30)),
+                  ...options[0].map(
+                    (opt) => Card(
+                      margin: EdgeInsets.symmetric(vertical: 8),
+                      child: RadioListTile<String>(
+                        title: Text(opt, textAlign: TextAlign.center),
+                        value: opt,
+                        groupValue: selected,
+                        onChanged: (val) =>
+                            modalSetState(() => selected = val!),
                       ),
-                  ],
-                ),
+                    ),
+                  ),
+                ],
               ),
               actions: [
                 TextButton(
-                  onPressed: () async {
-                    if (userAnswers.every((answer) => answer.isNotEmpty)) {
-                      Navigator.of(context).pop(); // ปิดกล่องแบบทดสอบ
-                      await _calculateAndSubmitScore(); // คำนวณและส่งคะแนน
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'กรุณาเลือกคำตอบก่อนส่ง',
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                  child: const Text("ส่ง"),
+                  child: Text("ส่ง"),
+                  onPressed: selected.isEmpty
+                      ? null
+                      : () {
+                          userAnswers[0] = selected;
+                          Navigator.of(ctx).pop();
+                          _calculateAndSubmitScore();
+                        },
                 ),
               ],
             );
@@ -251,91 +301,96 @@ class _Chapter4PageState extends State<Chapter4Page> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.white,
       builder: (context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
-                left: 16,
-                right: 16,
-                top: 16,
-              ),
-              child: SizedBox(
-                height: MediaQuery.of(context).size.height * 0.7,
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: ListView.builder(
-                        reverse: true,
-                        itemCount: _chatMessages.length,
-                        itemBuilder: (context, index) {
-                          final message = _chatMessages.reversed.toList()[index];
-                          return Align(
-                            alignment: message.isUser
-                                ? Alignment.centerRight
-                                : Alignment.centerLeft,
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(vertical: 4),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6, // Start at 60% height
+          minChildSize: 0.4,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (context, scrollController) {
+            return StatefulBuilder(
+              builder: (BuildContext context, StateSetter setModalState) {
+                return Padding(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).viewInsets.bottom,
+                    left: 16,
+                    right: 16,
+                    top: 16,
+                  ),
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: ListView.builder(
+                          controller: scrollController,
+                          reverse: true,
+                          itemCount: _chatMessages.length,
+                          itemBuilder: (context, index) {
+                            final message = _chatMessages.reversed
+                                .toList()[index];
+                            return Align(
+                              alignment: message.isUser
+                                  ? Alignment.centerRight
+                                  : Alignment.centerLeft,
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: message.isUser
+                                      ? Colors.blue[100]
+                                      : Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: message.isUser
+                                    ? Text(message.text)
+                                    : MarkdownBody(
+                                        data: message.text,
+                                        shrinkWrap: true,
+                                      ),
                               ),
-                              decoration: BoxDecoration(
-                                color: message.isUser
-                                    ? Colors.blue[100]
-                                    : Colors.grey[200],
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: message.isUser
-                                  ? Text(message.text)
-                                  : MarkdownBody(
-                                      data: message.text,
-                                      shrinkWrap: true,
-                                    ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    if (_isChatLoading)
-                      const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: CircularProgressIndicator(),
+                            );
+                          },
                         ),
                       ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _chatController,
-                              decoration: InputDecoration(
-                                hintText: 'ถามอะไรสักอย่าง...',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(20),
+                      if (_isChatLoading)
+                        const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: CircularProgressIndicator(),
+                          ),
+                        ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _chatController,
+                                decoration: InputDecoration(
+                                  hintText: 'มีอะไรพูดคุยกับฉันเลย',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
                                 ),
-                              ),
-                              onSubmitted: (_) => _sendMessageToN8n(
-                                setModalState,
+                                onSubmitted: (_) =>
+                                    _sendMessageToN8n(setModalState),
                               ),
                             ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.send),
-                            onPressed: () => _sendMessageToN8n(
-                              setModalState,
+                            IconButton(
+                              icon: const Icon(Icons.send),
+                              onPressed: () => _sendMessageToN8n(setModalState),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
+                    ],
+                  ),
+                );
+              },
             );
           },
         );
@@ -345,38 +400,60 @@ class _Chapter4PageState extends State<Chapter4Page> {
 
   @override
   Widget build(BuildContext context) {
+    bool quizEnabled = questionCount >= 3;
+
     return Scaffold(
-      appBar: AppBar(title: Text('บทที่ ${widget.chapter}')),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showChatDialog,
-        child: const Icon(Icons.chat_bubble_outline),
-        tooltip: 'Chat with AI Assistant',
+      appBar: AppBar(
+        title: Text('บทที่ ${widget.chapter} ทักษะการตัดสินใจ'),
+        automaticallyImplyLeading: false,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-              const Text("ถ้าคุณถูกชักชวนให้สูบบุหรี่ไฟฟ้า "),
-              Image.asset(
-                'assets/images/buddy_8.png',
-                height: 400,
+      body: Stack(
+        children: [
+          // Main content (scrollable column)
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Center(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 20),
+                  const Text(
+                    "ถ้าคุณถูกชักชวนให้สูบบุหรี่ไฟฟ้า คุณจะทำอย่างไร",
+                    style: TextStyle(fontSize: 36, fontWeight: FontWeight.w500),
+                    textAlign: TextAlign.center,
+                  ),
+                  Image.asset('assets/images/buddy_8g.gif', height: 400),
+                  const SizedBox(height: 100),
+                  const Text(
+                    "สวัสดี! ฉันพร้อมจะช่วยให้คำปรึกษาแล้วนะ เปิดกล่องข้อความด้างล่างเพื่อคุยกับฉันเลย (ถามฉันสัก 3 คำถามแล้วฉันจะถามคำถามกลับให้คุณตัดสินใจ)",
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
+                    textAlign: TextAlign.center,
+                  ),
+                  if (quizEnabled) _buildQuiz(),
+                ],
               ),
-              const SizedBox(height: 10),
-              const Text(
-                "คุณจะทำอย่างไร",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 30),
-              const Text(
-                "สวัสดี! ฉันพร้อมจะช่วยให้คำปรึกษาแล้วนะ เปิดกล่องข้อความด้างล่างเพื่อคุยกับฉันเลย",
-                textAlign: TextAlign.center,
-              ),
-            ],
+            ),
           ),
-        ),
+          // Positioned chat button near the image
+          Align(
+            alignment: Alignment(0.7, -0.3), // x: 0 is center; tweak as needed
+            child: RawMaterialButton(
+              onPressed: _showChatDialog,
+              elevation: 2.0,
+              fillColor: Colors.blue,
+              shape: const CircleBorder(),
+              constraints: const BoxConstraints.tightFor(
+                width: 200, // ⬅️ Increase button width
+                height: 200, // ⬅️ Increase button height
+              ),
+              child: const Icon(
+                Icons.chat_bubble_outline,
+                size: 120, // ⬅️ Large icon
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

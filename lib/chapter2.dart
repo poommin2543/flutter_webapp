@@ -36,32 +36,43 @@ class _Chapter2PageState extends State<Chapter2Page> {
   )..preload = 'auto';
 
   final List<String> videoIds = [
-    '_8XW_BgiD_Q', // ตรวจสอบ ID วิดีโอให้ถูกต้อง
-    // 'AvcAVT_XQA0',
-    // 'gCahggGt7ao',
-    // 'dfofaZaJ3Rc',
-    // 'OBnA5HF6kvk', // แก้ไข videoId ให้ตรงกับข้อมูลที่ถูกต้อง
+    '_8XW_BgiD_Q',
+    'dfofaZaJ3Rc',
+    'gCahggGt7ao',
+    'WwSfLUtrx_Y',
+    'ZnuO_wbMu9I', // แก้ไข videoId ให้ตรงกับข้อมูลที่ถูกต้อง
+    // แก้ไข videoId ให้ตรงกับข้อมูลที่ถูกต้อง
   ];
   final List<String> questions = [
-    'จากวิดีโอ สารเคมีใดที่สำคัญที่สุดที่พบในบุหรี่ไฟฟ้าและส่งผลเสียต่อร่างกาย?',
-    // 'ผลกระทบของบุหรี่ไฟฟ้าต่อปอดคืออะไร?',
-    // 'บุหรี่ไฟฟ้ามีผลต่อสมองวัยรุ่นอย่างไร?',
-    // 'ข้อใดไม่ใช่ผลกระทบของบุหรี่ไฟฟ้าต่อหัวใจและหลอดเลือด?',
-    // 'การเลิกบุหรี่ไฟฟ้าในวัยรุ่นมีความท้าทายอย่างไรบ้าง?',
+    'บุหรี่ไฟฟ้ามีสิ่งใดที่สามารถชักจูงให้เยาวชนสนใจ?',
+    'สาเหตุที่เยาวชนเริ่มสูบบุหรี่ไฟฟ้าได้แก่อะไร?',
+    'อันตรายจากสารพิษในบุหรี่ไฟฟ้าส่งผลกระทบต่อส่วนใดของร่างกาย?',
+    'บุหรี่ไฟฟ้าผิดกฏหมายในประเทศไทยหรือไม่?',
+    'ข้อใดคือความเข้าใจผิดเกี่ยวกับบุหรี่ไฟฟ้า?',
   ];
   final List<List<String>> options = [
-    ['นิโคติน', 'กลีเซอรอล', 'โพรพิลีนไกลคอล', 'สารแต่งกลิ่น'],
-    // ['ทำให้ปอดแข็งแรงขึ้น', 'ทำให้ปอดอักเสบและเสียหาย', 'ช่วยล้างปอด', 'ไม่มีผลกระทบ'],
-    // ['ช่วยให้สมองพัฒนาเต็มที่', 'ทำให้สมองถูกทำลายและส่งผลต่อสมาธิ', 'ไม่มีผลกระทบ', 'ช่วยเพิ่มความจำ'],
-    // ['เพิ่มความดันโลหิต', 'หัวใจเต้นผิดจังหวะ', 'ทำให้หลอดเลือดขยายตัว', 'เพิ่มความเสี่ยงโรคหัวใจ'],
-    // ['ง่ายมาก ไม่ต้องพยายาม', 'ยากเพราะมีอาการถอนนิโคติน', 'สามารถทำได้ด้วยตัวเองเสมอ', 'ไม่มีความท้าทายเลย'],
+    ['กลิ่นหอม รูปลักษณ์', 'มีสารเสพติด', 'ปลอดภัยกว่าบุหรี่มวน', 'มีความเทห์'],
+    ['มีความอันตรายน้อย', 'สื่อชักชวน', 'ควันมือสอง', 'เพื่อนชักชวน'],
+    ['ไต', 'อวัยวะทุกส่วนในร่างกาย', 'หัวใจ', 'ข้อกระดูก'],
+    [
+      'ถูกกฏหมาย',
+      'ผิดกฏหมายเฉพาะผู้นำเข้า',
+      'ผิดกฏหมายเฉพาะผู้ขาย',
+      'ผิดกฏหมายทั้งหมดไม่ว่ากรณีใดก็ตาม',
+    ],
+    [
+      'มีสารเคมีหลายชนิดที่อาจส่งผลต่อปอด',
+      'วัยรุ่นจำนวนมากเริ่มสูบเพราะกลิ่นและรสชาติ',
+      'ไม่มีสารนิโคติน',
+      'การสูบบุหรี่ไฟฟ้าอาจทำให้เสพติดได้',
+    ],
   ];
   final List<String> answers = [
-    'นิโคติน',
-    // 'ทำให้ปอดอักเสบและเสียหาย',
-    // 'ทำให้สมองถูกทำลายและส่งผลต่อสมาธิ',
-    // 'ทำให้หลอดเลือดขยายตัว',
-    // 'ยากเพราะมีอาการถอนนิโคติน',
+    'กลิ่นหอม รูปลักษณ์',
+    'เพื่อนชักชวน',
+    'อวัยวะทุกส่วนในร่างกาย',
+    'ผิดกฏหมายทั้งหมดไม่ว่ากรณีใดก็ตาม',
+    'ไม่มีสารนิโคติน',
   ];
 
   int currentIndex = 0;
@@ -70,11 +81,20 @@ class _Chapter2PageState extends State<Chapter2Page> {
   bool answered = false;
   bool isCorrect = false;
   String characterImage = 'assets/images/buddy_8.png'; // ใช้รูปเดิมไปก่อน
+  bool videoEnded = false;
+
+  final html.AudioElement backgroundAudio =
+      html.AudioElement('assets/sounds/background.mp3')
+        ..loop = true
+        ..autoplay = true
+        ..volume = 0.3;
 
   @override
   void initState() {
     super.initState();
+    backgroundAudio.play();
     userAnswers = List.filled(videoIds.length, '');
+
     _controller = YoutubePlayerController.fromVideoId(
       videoId: videoIds[0],
       params: const YoutubePlayerParams(
@@ -82,10 +102,21 @@ class _Chapter2PageState extends State<Chapter2Page> {
         showControls: true,
       ),
     );
+
+    // 👇 Add this listener
+    _controller.listen((event) {
+      if (event.playerState == PlayerState.ended) {
+        setState(() {
+          videoEnded = true;
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
+    backgroundAudio.pause(); // Stop audio
+    backgroundAudio.src = ''; // Clean up
     _controller.close();
     super.dispose();
   }
@@ -93,14 +124,17 @@ class _Chapter2PageState extends State<Chapter2Page> {
   void _loadVideoAtIndex(int idx) {
     // โหลดวิดีโอถ้าไม่ใช่ index ที่ 4 ซึ่งจะใช้รูปภาพแทน
     if (idx < videoIds.length) {
-      if (idx != 4) { // ถ้าไม่ใช่คำถามที่ 5 (index 4) ให้โหลดวิดีโอ
+      if (idx != 51) {
+        // ถ้าไม่ใช่คำถามที่ 5 (index 4) ให้โหลดวิดีโอ
         _controller.loadVideoById(videoId: videoIds[idx]);
-      } else { // ถ้าเป็นคำถามที่ 5 ให้หยุดวิดีโอและไม่โหลดใหม่
+      } else {
+        // ถ้าเป็นคำถามที่ 5 ให้หยุดวิดีโอและไม่โหลดใหม่
         // _controller.stop();
       }
     }
     setState(() {
       answered = false;
+      videoEnded = false; // 🔁 Reset this for the new video
       userAnswers[idx] = ''; // Reset user's answer for the new question
       characterImage = 'assets/images/buddy_8.png'; // Revert character image
     });
@@ -108,13 +142,14 @@ class _Chapter2PageState extends State<Chapter2Page> {
 
   Future<void> _submitAnswer() async {
     // ป้องกันการส่งคำตอบซ้ำ
+
     if (answered) return;
 
     isCorrect = userAnswers[currentIndex] == answers[currentIndex];
     answered = true; // ทำเครื่องหมายว่าตอบแล้วเพื่อแสดงผล
     characterImage = isCorrect
-        ? 'assets/images/buddy_happy.png'
-        : 'assets/images/buddy_sad.png';
+        ? 'assets/images/buddy_8c.gif'
+        : 'assets/images/buddy_8w.gif';
 
     if (kIsWeb) {
       if (isCorrect) {
@@ -163,18 +198,23 @@ class _Chapter2PageState extends State<Chapter2Page> {
         body: jsonEncode({
           'username': widget.username,
           'chapter': widget.chapter, // หมายถึงบทที่เพิ่งทำเสร็จ/พยายามทำ
-          'score': totalScore, // คะแนนรวมสำหรับบทเรียนนี้ (หรือคะแนนการพยายามล่าสุด)
+          'score':
+              totalScore, // คะแนนรวมสำหรับบทเรียนนี้ (หรือคะแนนการพยายามล่าสุด)
           'route_id': widget.routeId,
-          'is_finished': isCurrentChapterQuizFinished, // True ถ้าคำถามทั้งหมดใน *บทเรียนนี้* ถูกทำเสร็จแล้ว
+          'is_finished':
+              isCurrentChapterQuizFinished, // True ถ้าคำถามทั้งหมดใน *บทเรียนนี้* ถูกทำเสร็จแล้ว
           'next_chapter': chapterToAdvanceTo, // บทเรียนที่ผู้ใช้ควรจะก้าวหน้าไป
-          'next_route_id': routeIdToAdvanceTo, // เส้นทางที่ผู้ใช้ควรจะก้าวหน้าไป
+          'next_route_id':
+              routeIdToAdvanceTo, // เส้นทางที่ผู้ใช้ควรจะก้าวหน้าไป
         }),
       );
 
       if (response.statusCode == 200) {
         print('Score submitted successfully! Progress updated on Backend.');
       } else {
-        print('Failed to submit score: ${response.statusCode} - ${response.body}');
+        print(
+          'Failed to submit score: ${response.statusCode} - ${response.body}',
+        );
       }
     } catch (e) {
       print('Error submitting score: $e');
@@ -184,11 +224,15 @@ class _Chapter2PageState extends State<Chapter2Page> {
     if (currentIndex + 1 < videoIds.length) {
       setState(() {
         currentIndex++;
-        _loadVideoAtIndex(currentIndex); // โหลดวิดีโอถัดไปและรีเซ็ตสถานะสำหรับคำถามถัดไป
+        _loadVideoAtIndex(
+          currentIndex,
+        ); // โหลดวิดีโอถัดไปและรีเซ็ตสถานะสำหรับคำถามถัดไป
       });
     } else {
       // คำถามทั้งหมดในบทเรียนนี้ถูกตอบแล้ว
-      print('Chapter ${widget.chapter} (Route ${widget.routeId}) finished. Final score: $totalScore');
+      print(
+        'Chapter ${widget.chapter} (Route ${widget.routeId}) finished. Final score: $totalScore',
+      );
 
       if (!mounted) return; // ตรวจสอบว่า Widget ยังอยู่ใน Tree ก่อนแสดง Dialog
       showDialog(
@@ -210,7 +254,8 @@ class _Chapter2PageState extends State<Chapter2Page> {
                       nextChapter: chapterToAdvanceTo, // ส่งบทเรียนที่คำนวณแล้ว
                       nextRouteId: routeIdToAdvanceTo, // ส่งเส้นทางที่คำนวณแล้ว
                       message: 'จบบทที่ ${widget.chapter} แล้ว 🎉',
-                      chapterDescription: 'กำลังเข้าสู่บทต่อไป...', // สามารถปรับข้อความได้
+                      chapterDescription:
+                          'กำลังเข้าสู่บทต่อไป...', // สามารถปรับข้อความได้
                     ),
                   ),
                 );
@@ -244,38 +289,80 @@ class _Chapter2PageState extends State<Chapter2Page> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            SizedBox(
-              width: MediaQuery.of(context).size.width * 0.9,
-              height: 400,
-              child: currentIndex == 4
-                  ? Image.asset('assets/images/Q5.jpg', fit: BoxFit.contain)
-                  : YoutubePlayer(controller: _controller),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Image.asset(
+                  characterImage,
+                  height: 400,
+                ), // Resize image as needed
+                const SizedBox(width: 20), // Space between image and video
+                SizedBox(
+                  width: 700,
+                  height: 400,
+                  child: YoutubePlayer(controller: _controller),
+                ),
+              ],
             ),
             const SizedBox(height: 20),
             Text(
               questions[currentIndex],
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
-            ...options[currentIndex].map(
-              (opt) => Container(
-                color: _optionColor(opt),
-                child: RadioListTile<String>(
-                  title: Text(opt),
-                  value: opt,
-                  groupValue: userAnswers[currentIndex],
-                  onChanged: answered
-                      ? null
-                      : (val) =>
-                            setState(() => userAnswers[currentIndex] = val!)),
+            if (!videoEnded)
+              Padding(
+                padding: const EdgeInsets.all(10),
+                child: Text(
+                  'กรุณาชมวิดีโอให้จบก่อนเลือกคำตอบ',
+                  style: TextStyle(color: Colors.red, fontSize: 24),
+                  textAlign: TextAlign.center,
+                ),
               ),
-            ).toList(),
+            ...options[currentIndex]
+                .map(
+                  (opt) => Container(
+                    width:
+                        MediaQuery.of(context).size.width *
+                        0.5, // 80% of screen width
+                    child: Card(
+                      elevation: 3,
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: RadioListTile<String>(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        title: Text(
+                          opt,
+                          style: const TextStyle(
+                            fontSize: 24,
+                          ), // Resize font here
+                          textAlign: TextAlign.center,
+                        ),
+                        value: opt,
+                        groupValue: userAnswers[currentIndex],
+                        onChanged: (!answered && videoEnded)
+                            ? (val) => setState(
+                                () => userAnswers[currentIndex] = val!,
+                              )
+                            : null,
+                        tileColor: _optionColor(opt),
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
             if (answered) const SizedBox(height: 10),
             if (answered)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Text(
-                  isCorrect ? '✅ ตอบถูกต้อง 🎉' : '❌ ผิด ลองใหม่นะ 😢',
+                  isCorrect ? '✅ ตอบถูกต้อง 🎉' : '❌ ผิด ไม่เป็นไรนะ 😢',
                   style: TextStyle(
                     fontSize: 18,
                     color: isCorrect ? Colors.green : Colors.red,
@@ -284,10 +371,11 @@ class _Chapter2PageState extends State<Chapter2Page> {
               ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed:
-                  (!answered && userAnswers[currentIndex].isNotEmpty) || answered
-                      ? _submitAnswer
-                      : null,
+              onPressed: (!videoEnded || answered)
+                  ? null
+                  : (userAnswers[currentIndex].isNotEmpty
+                        ? _submitAnswer
+                        : null),
               child: Text(
                 answered
                     ? (currentIndex + 1 < videoIds.length ? 'ถัดไป' : 'ส่ง')
@@ -296,13 +384,16 @@ class _Chapter2PageState extends State<Chapter2Page> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blueAccent,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 30,
+                  vertical: 15,
+                ),
                 textStyle: const TextStyle(fontSize: 18),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
-            const SizedBox(height: 20),
-            Image.asset(characterImage, height: 120),
           ],
         ),
       ),

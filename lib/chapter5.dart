@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'summary_page.dart'; // Import the new SummaryPage
 import 'constants.dart'; // นำเข้า AppConstants
+import 'dart:html' as html; // For AudioElement in Flutter Web
 
 class Chapter5Page extends StatefulWidget {
   final int chapter;
@@ -27,26 +28,41 @@ class _Chapter5PageState extends State<Chapter5Page> {
   String _message = '';
 
   final List<String> questions = [
-    "การแนะนำเพื่อนที่ดีด้วยใจของเราเอง เป็นสิ่งที่มีคุณค่า?",
+    "ถ้าคุณเป็นต้น คุณจะจัดการกับความเครียดของตัวเองอย่างไร โดยไม่พึ่งบุหรี่ไฟฟ้า?",
   ];
 
   final List<List<String>> options = [
-    ["ใช่ ทุกประการ", "ใช่ บางประการ", "ไม่ใช่ บางประการ", "ไม่ใช่ทุกประการ"],
+    [
+      "สูบตามเพื่อน เพื่อให้รู้สึกดีขึ้นเร็ว ๆ",
+      "หาวิธีคลายเครียดที่ดีต่อสุขภาพ เช่น เดินเล่น ฟังเพลง หรือคุยกับคนที่ไว้ใจได้",
+      "ไม่ทำอะไรเลย เก็บไว้คนเดียว",
+      "บ่นให้เพื่อนฟังแล้วขอให้เขาเอามาให้สูบอีก",
+    ],
   ];
 
-  final List<String> answers = ["ใช่ ทุกประการ"];
-  late List<String> userAnswers; // Initialize userAnswers based on question length
+  final List<String> answers = [
+    "หาวิธีคลายเครียดที่ดีต่อสุขภาพ เช่น เดินเล่น ฟังเพลง หรือคุยกับคนที่ไว้ใจได้",
+  ];
+  late List<String>
+  userAnswers; // Initialize userAnswers based on question length
   int score = 0;
+  final html.AudioElement backgroundAudio =
+      html.AudioElement('assets/sounds/background.mp3')
+        ..loop = true
+        ..autoplay = true
+        ..volume = 0.3;
 
   @override
   void initState() {
     super.initState();
+    backgroundAudio.play();
     userAnswers = List.filled(questions.length, "");
   }
 
   @override
   void dispose() {
-    _commentController.dispose();
+    backgroundAudio.pause();
+    backgroundAudio.src = '';
     super.dispose();
   }
 
@@ -103,7 +119,8 @@ class _Chapter5PageState extends State<Chapter5Page> {
     }
 
     // ตรวจสอบว่าแบบทดสอบในบทเรียนปัจจุบันเสร็จสมบูรณ์แล้วหรือไม่
-    bool isCurrentChapterQuizFinished = true; // สำหรับบทนี้คือ True เสมอ เพราะเป็นแบบทดสอบข้อเดียวหลังแชท
+    bool isCurrentChapterQuizFinished =
+        true; // สำหรับบทนี้คือ True เสมอ เพราะเป็นแบบทดสอบข้อเดียวหลังแชท
 
     int chapterToAdvanceTo = widget.chapter;
     int routeIdToAdvanceTo = widget.routeId;
@@ -128,16 +145,20 @@ class _Chapter5PageState extends State<Chapter5Page> {
           'chapter': widget.chapter, // บทที่เพิ่งทำแบบทดสอบเสร็จ
           'score': score, // คะแนนที่ได้จากแบบทดสอบนี้
           'route_id': widget.routeId,
-          'is_finished': isCurrentChapterQuizFinished, // True เพราะแบบทดสอบเสร็จสิ้น
+          'is_finished':
+              isCurrentChapterQuizFinished, // True เพราะแบบทดสอบเสร็จสิ้น
           'next_chapter': chapterToAdvanceTo, // บทที่ผู้ใช้ควรจะก้าวหน้าไป
-          'next_route_id': routeIdToAdvanceTo, // เส้นทางที่ผู้ใช้ควรจะก้าวหน้าไป
+          'next_route_id':
+              routeIdToAdvanceTo, // เส้นทางที่ผู้ใช้ควรจะก้าวหน้าไป
         }),
       );
 
       if (response.statusCode == 200) {
         print('Score submitted successfully! Progress updated on Backend.');
       } else {
-        print('Failed to submit score: ${response.statusCode} - ${response.body}');
+        print(
+          'Failed to submit score: ${response.statusCode} - ${response.body}',
+        );
       }
     } catch (e) {
       print('Error submitting score: $e');
@@ -159,7 +180,9 @@ class _Chapter5PageState extends State<Chapter5Page> {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => SummaryPage(username: widget.username)),
+                MaterialPageRoute(
+                  builder: (context) => SummaryPage(username: widget.username),
+                ),
               );
             },
             child: const Text('ตกลง'),
@@ -177,7 +200,9 @@ class _Chapter5PageState extends State<Chapter5Page> {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setDialogState) {
             return AlertDialog(
-              title: Text('แบบทดสอบบทที่ ${widget.chapter} เส้นทางที่ ${widget.routeId}'),
+              title: Text(
+                'แบบทดสอบบทที่ ${widget.chapter} เส้นทางที่ ${widget.routeId}',
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -221,9 +246,7 @@ class _Chapter5PageState extends State<Chapter5Page> {
                       _calculateAndSubmitScore(dialogContext);
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('กรุณาเลือกคำตอบก่อนส่ง'),
-                        ),
+                        const SnackBar(content: Text('กรุณาเลือกคำตอบก่อนส่ง')),
                       );
                     }
                   },
@@ -240,7 +263,10 @@ class _Chapter5PageState extends State<Chapter5Page> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('บทที่ ${widget.chapter}')),
+      appBar: AppBar(
+        title: Text('บทที่ ${widget.chapter} ทักษะการจัดการตนเอง'),
+        automaticallyImplyLeading: false,
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -249,36 +275,66 @@ class _Chapter5PageState extends State<Chapter5Page> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const SizedBox(height: 20),
-                Image.asset(
-                  'assets/images/buddy_8.png',
-                  height: 300,
-                ),
+                Image.asset('assets/images/buddy_8g.gif', height: 300),
                 const SizedBox(height: 20),
                 const Text(
-                  "คุณได้เรียนรู้มากมายเกี่ยวกับการจัดการตนเองและบุหรี่ไฟฟ้าแล้ว มาสรุปสิ่งที่คุณได้เรียนรู้และแบ่งปันความคิดเห็นกันเถอะ",
+                  "เมื่อฉันรู้สึกเครียด และมีคนเสนอให้สูบบุหรี่ไฟฟ้าเพื่อคลายความเครียด...",
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: Colors.indigo,
                   ),
                   textAlign: TextAlign.center,
                 ),
+                const SizedBox(height: 30),
+                const Text(
+                  "หลังจากสอบกลางภาค ต้นรู้สึกเครียดมาก เพราะทำข้อสอบบางวิชาไม่ได้เลย ขณะนั่งพักอยู่หลังโรงเรียน เพื่อนคนหนึ่งเดินเข้ามาแล้วพูดว่า <สูบอันนี้ดูสิ มันช่วยให้ผ่อนคลายนะ เราสูบแล้วรู้สึกดีขึ้นเยอะเลย> ต้นลังเล เขารู้ว่าบุหรี่ไฟฟ้าไม่ดีต่อสุขภาพ แต่ในใจก็เครียดจนไม่รู้จะทำยังไงดี",
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.indigo,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 30),
+                Text(
+                  questions[0], // Dynamically show your defined question
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 20),
-                TextField(
-                  controller: _commentController,
-                  maxLines: 5,
-                  decoration: InputDecoration(
-                    hintText: 'คุณเรียนรู้อะไรจากการเดินทางในเส้นทางนี้บ้าง?',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
+                ...options[0].map(
+                  (option) => Container(
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    width: double.infinity,
+                    child: Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: RadioListTile<String>(
+                        title: Text(option, textAlign: TextAlign.center),
+                        value: option,
+                        groupValue: userAnswers[0],
+                        onChanged: (val) {
+                          setState(() {
+                            userAnswers[0] = val!;
+                          });
+                        },
+                      ),
                     ),
-                    filled: true,
-                    fillColor: Colors.grey[100],
                   ),
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: _submitComment,
+                  onPressed: userAnswers[0].isNotEmpty
+                      ? () {
+                          _calculateAndSubmitScore(context);
+                        }
+                      : null,
+                  child: const Text("ส่งคำตอบ"),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                     foregroundColor: Colors.white,
@@ -290,24 +346,7 @@ class _Chapter5PageState extends State<Chapter5Page> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: const Text(
-                    "ส่งความคิดเห็น",
-                    style: TextStyle(fontSize: 18),
-                  ),
                 ),
-                const SizedBox(height: 20),
-                _message.isNotEmpty
-                    ? Text(
-                        _message,
-                        style: TextStyle(
-                          color: _message.contains('ข้อผิดพลาด')
-                              ? Colors.red
-                              : Colors.green,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      )
-                    : const SizedBox.shrink(),
               ],
             ),
           ),
